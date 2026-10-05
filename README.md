@@ -1,14 +1,14 @@
-# Ari
+# Ari 🚢
 
-ari is ship-review platform at hack club! programs use them for verifying that a project submission follows the [YSWS Submission guidelines](https://hack.club/ysws-rules)
+ari is ship-review platform at hack club! 🚀 programs use them for verifying that a project submission follows the [YSWS Submission guidelines](https://hack.club/ysws-rules)
 
-you are looking right now at the web app - anything related to webhook ingestion and background work lives in [ari-webhooks](https://github.com/hackclub.com/ari-webhooks)!, which shares the database.
+you are looking right now at the web app - anything related to webhook ingestion and background work lives in [ari-webhooks](https://github.com/hackclub.com/ari-webhooks)!, which shares the database. 🕸️
 
-there are private sections of the platform that are under a private repo, these contents are not to be shown to the public for containing fraud tooling or showing how certain flags work in specific, if you intend to work on flags, please poke this [non-jolly person](https://hackclub.enterprise.slack.com/team/U08PD2ZB3DL)
+there are private sections of the platform that are under a private repo, these contents are not to be shown to the public for containing fraud tooling or showing how certain flags work in specific, if you intend to work on flags, please poke this [non-jolly person](https://hackclub.enterprise.slack.com/team/U08PD2ZB3DL) 🔒
 
-## running it locally
+## 🛠️ running it locally
 
-you'll need [Bun](https://bun.sh) and Docker (bonus points if you use Orbstack in MacOS!)
+you'll need [Bun](https://bun.sh) and Docker (bonus points if you use Orbstack in MacOS!) 📦
 
 ```sh
 bun install --frozen-lockfile
@@ -31,9 +31,9 @@ after running ari, go to <http://localhost:5173/auth/dev> and sign in as one of 
 | User 3 | Software reviewer on Program 1            |
 | User 4 | Hardware reviewer on Program 2            |
 
-fun fact! `/styleguide` shows every shared component.
+fun fact! ✨ `/styleguide` shows every shared component. 🎨
 
-## checks to run after building
+## ✅ checks to run after building
 
 ```sh
 bun run check   # types
@@ -42,7 +42,7 @@ bun test src    # unit tests
 bun run build
 ```
 
-## container images
+## 🐳 container images
 
 there's one `Dockerfile` and it builds both editions, you can chose the edition with the `edition` build argument like the go service's:
 

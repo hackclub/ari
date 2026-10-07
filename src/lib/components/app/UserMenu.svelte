@@ -28,6 +28,7 @@
 		...(canDocs ? [{ label: 'Docs', icon: 'book' as const, href: '/docs' }] : []),
 		...(canAdmin ? [{ label: 'Admin', icon: 'shield' as const, href: '/admin' }] : []),
 		{ label: 'MCP', icon: 'lock', href: '/mcp' },
+		{ label: 'Settings', icon: 'settings' as const, href: '/settings' },
 		{
 			label: 'Sign out',
 			icon: 'logout',

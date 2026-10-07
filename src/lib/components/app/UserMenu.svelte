@@ -24,11 +24,12 @@
 	const items = $derived<DropdownItem[]>([
 		...(canDocs ? [{ label: 'Docs', icon: 'book' as const, href: '/docs' }] : []),
 		...(canAdmin ? [{ label: 'Admin', icon: 'shield' as const, href: '/admin' }] : []),
+		{ label: 'Settings', icon: 'settings' as const, href: '/settings' },
 		{
 			label: 'Sign out',
 			icon: 'logout',
 			tone: 'danger',
-			separatorBefore: canDocs || canAdmin,
+			separatorBefore: true,
 			// a full navigation: the endpoint clears the cookie and redirects
 			onSelect: () => window.location.assign('/auth/logout')
 		}

@@ -19,11 +19,14 @@ Sentry.init({
 // public without a session. new /api routes are private by default; /priority is gated by
 // its unguessable path token, never a reviewer session
 const isMcpApiPath = (path: string) => /^\/api\/mcp\/?$/.test(path);
+const isAdminApiPath = (path: string) => /^\/api\/admin\/tools\/[a-z_]+$/.test(path);
 const publicPaths = [
 	/^\/login$/,
 	/^\/auth\//,
 	/^\/api\/avatar\/[^/]+\/?$/,
 	/^\/api\/mcp\/?$/,
+	/^\/api\/admin\/tools\/[a-z_]+$/,
+	/^\/api\/openapi\.json$/,
 	/^\/oauth\//,
 	/^\/priority\//
 ];
@@ -65,10 +68,11 @@ const isMcpPath = (path: string) =>
 
 // sveltekit's origin check is off (svelte.config.js), so same-origin is re-applied here for the
 // cookie surface. every unsafe method must carry a matching origin, whatever the content type:
-// a blob body without one still reaches json endpoints. only the bearer mcp api and /oauth are
-// exempt: no ambient credential to abuse
+// a blob body without one still reaches json endpoints. only the bearer mcp and admin apis and
+// /oauth are exempt: no ambient credential to abuse
 const unsafeMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
-const isCsrfExempt = (path: string) => isMcpApiPath(path) || path.startsWith('/oauth/');
+const isCsrfExempt = (path: string) =>
+	isMcpApiPath(path) || isAdminApiPath(path) || path.startsWith('/oauth/');
 function isCrossSiteWrite(event: { request: Request; url: URL }): boolean {
 	if (!unsafeMethods.includes(event.request.method)) return false;
 	return event.request.headers.get('origin') !== event.url.origin;

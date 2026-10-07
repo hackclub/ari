@@ -1,11 +1,12 @@
 import { db } from '$lib/server/db';
+import { requireOrgPermission, tokenReaches } from './access';
 import { personInput, personWhere, type Tool } from './shared';
 
 export const listUsers: Tool = {
 	spec: {
 		name: 'list_users',
 		description:
-			'Org users with their org permissions and per-program memberships (role + track scope). Optionally filter to users holding at least one org permission.',
+			'Org users with their org permissions and per-program memberships (role + track scope). Optionally filter to users holding at least one org permission. Needs MANAGE_PEOPLE or GRANT_ORG_PERMS.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -17,7 +18,8 @@ export const listUsers: Tool = {
 			additionalProperties: false
 		}
 	},
-	handler: async (args) => {
+	handler: async (args, context) => {
+		requireOrgPermission(context, 'MANAGE_PEOPLE', 'GRANT_ORG_PERMS');
 		const users = await db.user.findMany({
 			where: args.withOrgPermissions ? { orgPermissions: { isEmpty: false } } : {},
 			orderBy: { createdAt: 'asc' },
@@ -53,7 +55,8 @@ export const listUsers: Tool = {
 export const whoami: Tool = {
 	spec: {
 		name: 'whoami',
-		description: 'Identity behind the current MCP token: the owning user and the token label.',
+		description:
+			'Identity behind the current token: the owning user, their org permissions and their memberships in the programs this token reaches, the token label, whether it can write, and the programs it is limited to (empty = every program the owner can reach).',
 		inputSchema: { type: 'object', properties: {}, additionalProperties: false }
 	},
 	handler: async (_args, context) => ({
@@ -61,8 +64,12 @@ export const whoami: Tool = {
 		name: context.user.name,
 		email: context.user.email,
 		orgPermissions: context.user.orgPermissions,
+		memberships: context.user.memberships.filter((membership) =>
+			tokenReaches(context, membership.programId)
+		),
 		token: context.tokenLabel,
-		canWrite: context.canWrite
+		canWrite: context.canWrite,
+		programIds: context.programIds
 	})
 };
 
@@ -70,14 +77,15 @@ export const getUser: Tool = {
 	spec: {
 		name: 'get_user',
 		description:
-			'Detail for one reviewer/organizer, resolved by email, Slack id, or name: org permissions, per-program memberships (role + tracks), review count, last seen, and their most recent decisions.',
+			'Detail for one reviewer/organizer, resolved by email, Slack id, or name: org permissions, per-program memberships (role + tracks), review count, last seen, and their most recent decisions. Needs MANAGE_PEOPLE or GRANT_ORG_PERMS.',
 		inputSchema: {
 			type: 'object',
 			properties: { ...personInput },
 			additionalProperties: false
 		}
 	},
-	handler: async (args) => {
+	handler: async (args, context) => {
+		requireOrgPermission(context, 'MANAGE_PEOPLE', 'GRANT_ORG_PERMS');
 		const { conditions } = personWhere(args);
 		const user = await db.user.findFirst({
 			where: { OR: conditions },

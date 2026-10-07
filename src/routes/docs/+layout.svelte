@@ -1,6 +1,6 @@
 <script lang="ts">
 	import './docs.css';
-	import { onMount, type Snippet } from 'svelte';
+	import type { Snippet } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { Icon } from '$lib/components/ui';
@@ -8,9 +8,11 @@
 	let { children }: { children: Snippet } = $props();
 
 	const webhookPath = resolve('/docs/webhooks');
+	const mcpPath = resolve('/docs/mcp');
 	const groups = [
 		{
 			label: 'Inbound webhooks',
+			path: webhookPath,
 			items: [
 				{ id: 'endpoint', label: 'Endpoint' },
 				{ id: 'authentication', label: 'Signing requests' },
@@ -25,6 +27,7 @@
 		},
 		{
 			label: 'Outbound webhooks',
+			path: webhookPath,
 			items: [
 				{ id: 'how-it-works', label: 'How delivery works' },
 				{ id: 'events', label: 'Events' },
@@ -32,14 +35,36 @@
 				{ id: 'time', label: 'Time fields' },
 				{ id: 'fraud', label: 'Fraud review' }
 			]
+		},
+		{
+			label: 'MCP and program setup',
+			path: mcpPath,
+			items: [
+				{ id: 'overview', label: 'Overview' },
+				{ id: 'connecting', label: 'Tokens and connecting' },
+				{ id: 'access', label: 'What a token can reach' },
+				{ id: 'rest', label: 'REST and OpenAPI' },
+				{ id: 'create', label: 'Creating a program' },
+				{ id: 'settings', label: 'Changing settings' },
+				{ id: 'review-tools', label: 'Checklist and fields' },
+				{ id: 'branding', label: 'Icon and card background' },
+				{ id: 'webhooks-setup', label: 'Ingest and outbound' },
+				{ id: 'flags', label: 'Flags and fraud review' },
+				{ id: 'tools', label: 'Tool reference' },
+				{ id: 'errors', label: 'Errors' }
+			]
 		}
 	];
+	const firstSection = (pathname: string) =>
+		groups.find((group) => group.path === pathname)?.items[0].id ?? '';
 
-	let activeId = $state(page.url.hash.slice(1) || 'endpoint');
+	let activeId = $state(page.url.hash.slice(1) || firstSection(page.url.pathname));
 	let mainElement = $state<HTMLElement>();
-	const isActive = (id: string) => page.url.pathname === webhookPath && activeId === id;
+	const isActive = (path: string, id: string) => page.url.pathname === path && activeId === id;
 
-	onMount(() => {
+	// the layout outlives a move between doc pages, so the sections are observed again on each one
+	$effect(() => {
+		activeId = page.url.hash.slice(1) || firstSection(page.url.pathname);
 		const sections = Array.from(document.querySelectorAll<HTMLElement>('[data-doc-section]'));
 		if (!mainElement || !sections.length || typeof IntersectionObserver === 'undefined') return;
 
@@ -69,8 +94,8 @@
 				<!-- eslint-disable svelte/no-navigation-without-resolve -- each route is resolved before its section fragment is appended -->
 				{#each group.items as item (item.id)}
 					<a
-						class={['link', isActive(item.id) && 'on']}
-						href={`${webhookPath}#${item.id}`}
+						class={['link', isActive(group.path, item.id) && 'on']}
+						href={`${group.path}#${item.id}`}
 						onclick={() => (activeId = item.id)}>{item.label}</a
 					>
 				{/each}

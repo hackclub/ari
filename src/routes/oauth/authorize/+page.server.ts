@@ -96,7 +96,7 @@ export const actions: Actions = {
 			return fail(400, {
 				params,
 				client: consentView(client, params.redirect_uri),
-				error: 'That token is invalid, revoked, or its owner lost MCP access.'
+				error: 'That token is invalid, revoked or expired.'
 			});
 		}
 
@@ -105,6 +105,7 @@ export const actions: Actions = {
 			clientId: client.id,
 			parentTokenId: context.tokenId,
 			canWrite: context.canWrite,
+			programIds: context.programIds,
 			codeChallenge: params.code_challenge,
 			redirectUri: params.redirect_uri
 		});

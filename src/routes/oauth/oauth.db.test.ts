@@ -274,6 +274,7 @@ describe('token exchange', () => {
 			clientId,
 			parentTokenId: adminTokenId,
 			canWrite: false,
+			programIds: [],
 			codeChallenge: '',
 			redirectUri
 		});

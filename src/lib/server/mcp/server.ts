@@ -1,8 +1,9 @@
-import { mcpTools, listToolSpecs } from './tools';
+import { toolFor, toolsFor } from './tools';
+import { toolError } from './tools/shared';
 import type { McpContext } from './auth';
 import { mlog } from './log';
 
-const serverInfo = { name: 'ari', version: '0.0.1' };
+export const serverInfo = { name: 'ari', version: '0.0.1' };
 const defaultProtocol = '2025-06-18';
 const supportedProtocols = new Set<unknown>(['2025-06-18', '2025-03-26', '2024-11-05']);
 
@@ -47,22 +48,23 @@ export async function dispatch(
 				capabilities: { tools: { listChanged: false } },
 				serverInfo,
 				instructions:
-					'Read-only access to ari, Hack Club’s ship-review platform. Org-admin scoped. Start with list_programs, then program_stats / list_submissions / get_submission.'
+					'Access to ari, Hack Club’s ship-review platform, as the token’s owner: every tool sees and does only what that person can in the app. Start with whoami and list_programs, then program_stats / list_submissions / get_submission. Read-write tokens can also change what their owner may change, such as program settings, review tools, members and signing secrets.'
 			});
 		}
 		case 'ping':
 			return succeed(id, {});
 		case 'tools/list': {
-			const specs = listToolSpecs(context.canWrite);
+			const specs = toolsFor(context).map((tool) => tool.spec);
 			mlog('rpc', 'tools/list', { count: specs.length, canWrite: context.canWrite });
 			return succeed(id, { tools: specs });
 		}
 		case 'tools/call': {
 			const name = request.params?.name;
+			// names only: values can be secrets or whole images
 			mlog('rpc', `tools/call: ${name ?? '(missing name)'}`, {
-				args: request.params?.arguments ?? {}
+				args: Object.keys(request.params?.arguments ?? {})
 			});
-			const tool = name ? mcpTools[name] : undefined;
+			const tool = name ? toolFor(name, context) : undefined;
 			if (!tool) {
 				mlog('rpc', `tools/call unknown tool: ${name ?? '(missing name)'}`);
 				return fail(id, -32602, `Unknown tool: ${name ?? '(missing name)'}`);
@@ -75,9 +77,10 @@ export async function dispatch(
 				});
 			} catch (error) {
 				// reported inside the result so the model sees the message and can adjust
-				mlog('rpc', `tools/call error: ${name}`, { error: (error as Error).message });
+				const { message } = toolError(error);
+				mlog('rpc', `tools/call error: ${name}`, { error: message });
 				return succeed(id, {
-					content: [{ type: 'text', text: `Error: ${(error as Error).message}` }],
+					content: [{ type: 'text', text: `Error: ${message}` }],
 					isError: true
 				});
 			}

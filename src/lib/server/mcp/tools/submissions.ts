@@ -1,20 +1,17 @@
+import { privateProvider } from '$private';
 import { db } from '$lib/server/db';
+import { hasPermission } from '$lib/server/authz';
+import { viewerOf } from '$lib/server/review/guards';
 import { shipAuthorName } from '$lib/server/serialize';
 import type { SubmissionStatus, Track } from '$db';
-import {
-	clampLimit,
-	personInput,
-	personWhere,
-	resolveProgram,
-	submissionStatuses,
-	type Tool
-} from './shared';
+import { programFor, reachablePrograms, shipsWhere, viewableShip } from './access';
+import { clampLimit, personInput, personWhere, submissionStatuses, type Tool } from './shared';
 
 export const listSubmissions: Tool = {
 	spec: {
 		name: 'list_submissions',
 		description:
-			'List submissions (ships) for a program, newest first. Optionally filter by status and/or track. Returns summary rows; use get_submission for full detail.',
+			'List the submissions (ships) you can see in a program, newest first: your tracks only, without your own ships where the program hides them, and without held or fraud-review ships unless you have SECOND_PASS or VIEW_FRAUD. Optionally filter by status and/or track. Returns summary rows; use get_submission for full detail.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -31,11 +28,12 @@ export const listSubmissions: Tool = {
 			additionalProperties: false
 		}
 	},
-	handler: async (args) => {
-		const program = await resolveProgram(String(args.program));
+	handler: async (args, context) => {
+		const program = await programFor(context, args.program);
+		const seesFlags = hasPermission(context.user, program.id, 'VIEW_FRAUD');
 		const rows = await db.submission.findMany({
 			where: {
-				programId: program.id,
+				...shipsWhere(context, [program]),
 				...(args.status ? { status: args.status as SubmissionStatus } : {}),
 				...(args.track ? { track: args.track as Track } : {})
 			},
@@ -64,7 +62,7 @@ export const listSubmissions: Tool = {
 			makerEmail: row.maker.email,
 			makerSlackId: row.maker.slackId,
 			claimedBy: row.claimedBy?.name ?? null,
-			flags: row._count.flags,
+			flags: seesFlags ? row._count.flags : undefined,
 			_count: undefined
 		}));
 	}
@@ -74,7 +72,7 @@ export const getSubmission: Tool = {
 	spec: {
 		name: 'get_submission',
 		description:
-			'Full detail for one submission: maker, collaborators, verified-hours breakdown, flags, evidence counts, and decision history.',
+			'Full detail for one submission you can open on the review screen: maker, collaborators, verified-hours breakdown, the warnings you may see, evidence counts, and, with VIEW_REVIEWED, the decision history.',
 		inputSchema: {
 			type: 'object',
 			properties: { id: { type: 'string', description: 'Submission id.' } },
@@ -82,23 +80,20 @@ export const getSubmission: Tool = {
 			additionalProperties: false
 		}
 	},
-	handler: async (args) => {
+	handler: async (args, context) => {
+		const ship = await viewableShip(context, args.id);
+		const viewer = viewerOf(context.user, ship.programId);
+		const seesHistory = hasPermission(context.user, ship.programId, 'VIEW_REVIEWED');
+		const warnings = await privateProvider.shipWarnings(
+			{ submissionId: ship.id, programId: ship.programId },
+			viewer
+		);
 		const submission = await db.submission.findUnique({
-			where: { id: String(args.id) },
+			where: { id: ship.id },
 			include: {
 				maker: { select: { email: true, name: true } },
 				program: { select: { id: true, name: true } },
 				hours: true,
-				flags: {
-					select: {
-						kind: true,
-						severity: true,
-						title: true,
-						what: true,
-						action: true,
-						dismissedAt: true
-					}
-				},
 				collaborators: {
 					orderBy: { id: 'asc' },
 					select: {
@@ -138,9 +133,18 @@ export const getSubmission: Tool = {
 				_count: { select: { commits: true, devlogs: true, clips: true } }
 			}
 		});
-		if (!submission) throw new Error(`No submission with id "${args.id}".`);
+		if (!submission) throw new Error(`No submission with id "${ship.id}".`);
 		return {
 			...submission,
+			reviews: seesHistory ? submission.reviews : undefined,
+			flags: warnings.map((warning) => ({
+				kind: warning.kind,
+				severity: warning.severity,
+				title: warning.title,
+				what: warning.what,
+				action: warning.action,
+				dismissedAt: warning.dismissedAt
+			})),
 			maker: { ...submission.maker, name: shipAuthorName(submission, submission.maker) },
 			collaborators: submission.collaborators.map((collaborator) => ({
 				...collaborator,
@@ -159,7 +163,7 @@ export const searchSubmissions: Tool = {
 	spec: {
 		name: 'search_submissions',
 		description:
-			'Find submissions whose title, repo URL, maker email, maker name, or maker Slack id contains the query (case-insensitive). Optionally scope to one program.',
+			'Find submissions you can see whose title, repo URL, maker email, maker name, or maker Slack id contains the query (case-insensitive). Optionally scope to one program.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -171,19 +175,23 @@ export const searchSubmissions: Tool = {
 			additionalProperties: false
 		}
 	},
-	handler: async (args) => {
+	handler: async (args, context) => {
 		const query = String(args.query);
-		const programId = args.program ? (await resolveProgram(String(args.program))).id : undefined;
+		const programs = args.program
+			? [await programFor(context, args.program)]
+			: await reachablePrograms(context);
 		return db.submission.findMany({
 			where: {
-				...(programId ? { programId } : {}),
-				OR: [
-					{ title: { contains: query, mode: 'insensitive' } },
-					{ repoUrl: { contains: query, mode: 'insensitive' } },
-					{ maker: { email: { contains: query, mode: 'insensitive' } } },
-					{ maker: { name: { contains: query, mode: 'insensitive' } } },
-					{ maker: { slackId: { contains: query, mode: 'insensitive' } } }
-				]
+				...shipsWhere(context, programs),
+				AND: {
+					OR: [
+						{ title: { contains: query, mode: 'insensitive' } },
+						{ repoUrl: { contains: query, mode: 'insensitive' } },
+						{ maker: { email: { contains: query, mode: 'insensitive' } } },
+						{ maker: { name: { contains: query, mode: 'insensitive' } } },
+						{ maker: { slackId: { contains: query, mode: 'insensitive' } } }
+					]
+				}
 			},
 			orderBy: { ingestedAt: 'desc' },
 			take: clampLimit(args.limit),
@@ -204,7 +212,7 @@ export const submissionEvidence: Tool = {
 	spec: {
 		name: 'submission_evidence',
 		description:
-			'The raw evidence captured for a submission: commits (hash, message, author, churn), devlog entries, and elapsed/lapse clips.',
+			'The raw evidence captured for a submission you can open: commits (hash, message, author, churn), devlog entries, and elapsed/lapse clips.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -215,11 +223,9 @@ export const submissionEvidence: Tool = {
 			additionalProperties: false
 		}
 	},
-	handler: async (args) => {
-		const id = String(args.id);
+	handler: async (args, context) => {
+		const { id } = await viewableShip(context, args.id);
 		const take = clampLimit(args.limit, 50);
-		const submission = await db.submission.findUnique({ where: { id }, select: { id: true } });
-		if (!submission) throw new Error(`No submission with id "${id}".`);
 		const [commits, devlogs, clips] = await Promise.all([
 			db.commit.findMany({
 				where: { submissionId: id },
@@ -256,7 +262,7 @@ export const findMaker: Tool = {
 	spec: {
 		name: 'find_maker',
 		description:
-			"Find a maker (ship submitter) by email, Slack id, or name, and list every ship they're on across all programs, both as primary maker and as a collaborator. If more than one maker matches (e.g. a name fragment), returns the candidate list instead so you can narrow down.",
+			'Find a maker (ship submitter) by email, Slack id, or name, and list the ships of theirs you can see, both as primary maker and as a collaborator. Makers with no ship you can see are not found. If more than one maker matches (e.g. a name fragment), returns the candidate list instead so you can narrow down.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -266,10 +272,25 @@ export const findMaker: Tool = {
 			additionalProperties: false
 		}
 	},
-	handler: async (args) => {
+	handler: async (args, context) => {
 		const { conditions } = personWhere(args);
+		const programs = await reachablePrograms(context);
+		const visible = shipsWhere(context, programs);
+		const fraudPrograms = new Set(
+			programs
+				.filter((program) => hasPermission(context.user, program.id, 'VIEW_FRAUD'))
+				.map((program) => program.id)
+		);
 		const candidates = await db.maker.findMany({
-			where: { OR: conditions },
+			where: {
+				OR: conditions,
+				AND: {
+					OR: [
+						{ submissions: { some: visible } },
+						{ collaborations: { some: { submission: visible } } }
+					]
+				}
+			},
 			take: 25, // enough candidates to narrow a name fragment, never the whole table
 			select: {
 				id: true,
@@ -277,7 +298,12 @@ export const findMaker: Tool = {
 				name: true,
 				slackId: true,
 				hackatimeUserId: true,
-				_count: { select: { submissions: true, collaborations: true } }
+				_count: {
+					select: {
+						submissions: { where: visible },
+						collaborations: { where: { submission: visible } }
+					}
+				}
 			}
 		});
 		if (candidates.length === 0) throw new Error('No maker matches that email, Slack id, or name.');
@@ -313,13 +339,13 @@ export const findMaker: Tool = {
 		} as const;
 		const [ships, collaborations] = await Promise.all([
 			db.submission.findMany({
-				where: { makerId: maker.id },
+				where: { makerId: maker.id, ...visible },
 				orderBy: { ingestedAt: 'desc' },
 				take,
 				select: shipSelect
 			}),
 			db.submissionCollaborator.findMany({
-				where: { makerId: maker.id },
+				where: { makerId: maker.id, submission: visible },
 				take,
 				select: {
 					hackatimeMinutes: true,
@@ -339,7 +365,7 @@ export const findMaker: Tool = {
 			...ship,
 			program: ship.program.id,
 			programName: ship.program.name,
-			flags: ship._count.flags,
+			flags: fraudPrograms.has(ship.program.id) ? ship._count.flags : undefined,
 			_count: undefined
 		});
 		return {

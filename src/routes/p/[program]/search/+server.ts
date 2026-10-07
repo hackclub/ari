@@ -1,15 +1,8 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import {
-	canAccessProgram,
-	trackScope,
-	trackWhere,
-	selfReviewWhere,
-	hasPermission
-} from '$lib/server/authz';
+import { canAccessProgram, hasPermission, visibleShipWhere } from '$lib/server/authz';
 import { authorLabel, evidenceSeconds } from '$lib/server/serialize';
 import { matchedDetail, searchShipCandidates } from '$lib/server/shipSearch';
-import type { SubmissionStatus } from '$db';
 
 export const GET: RequestHandler = async ({ url, params, locals }) => {
 	const user = locals.user;
@@ -31,11 +24,6 @@ export const GET: RequestHandler = async ({ url, params, locals }) => {
 
 	const matches = { contains: query, mode: 'insensitive' as const };
 
-	// the review screen refuses held and parked ships without these, so they are not surfaced
-	const hiddenStatuses: SubmissionStatus[] = [];
-	if (!hasPermission(user, program.id, 'SECOND_PASS')) hiddenStatuses.push('secondpass');
-	if (!hasPermission(user, program.id, 'VIEW_FRAUD')) hiddenStatuses.push('fraudreview');
-
 	// member names and emails are the roster, so they take the roster's gate
 	const canSeeReviewers = hasPermission(user, program.id, 'VIEW_REVIEWERS');
 	const [candidates, memberships] = await Promise.all([
@@ -55,11 +43,8 @@ export const GET: RequestHandler = async ({ url, params, locals }) => {
 	// the ranking knows nothing about access: the same rules as the queue decide what is listed
 	const visible = await db.submission.findMany({
 		where: {
-			programId: program.id,
-			id: { in: candidates.map((candidate) => candidate.id) },
-			...trackWhere(trackScope(user, program.id)),
-			...(hiddenStatuses.length ? { status: { notIn: hiddenStatuses } } : {}),
-			...selfReviewWhere(user, program.reviewersCannotReviewOwnProjects, program.id)
+			...visibleShipWhere(user, program.id, program.reviewersCannotReviewOwnProjects),
+			id: { in: candidates.map((candidate) => candidate.id) }
 		},
 		include: {
 			maker: true,

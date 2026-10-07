@@ -52,6 +52,7 @@ model McpAuthCode {
   /// The token pasted on the consent page; the minted token inherits its expiry and lineage.
   parentTokenId String?
   canWrite      Boolean        @default(false)
+  programIds    String[]       @default([])
   codeChallenge String
   redirectUri   String
   expiresAt     DateTime
@@ -78,11 +79,11 @@ model McpOauthClient {
   @@index([createdAt])
 }
 
-/// Bearer token for the org MCP server.
+/// Bearer token for the MCP server and admin API, minted by any user for themselves.
 /// Session-free machine auth: the raw token (shown once at mint) is
-/// `ari_mcp_<base64url>`; we store only its SHA256 hash, like Session. Every
-/// request re-checks the owning user still holds MANAGE_MCP + OPERATE_ALL_PROGRAMS,
-/// so revoking either permission instantly kills their tokens.
+/// `ari_mcp_<base64url>`; we store only its SHA256 hash, like Session. A token acts
+/// as its owner with the owner's current access, re-read on every request, so it can
+/// never reach further than the owner can.
 model McpToken {
   id            String        @id @default(cuid())
   /// SHA256 hex of the raw token; the raw value is never stored.
@@ -91,9 +92,11 @@ model McpToken {
   /// Human label so an admin can tell tokens apart in the Admin → MCP list.
   label         String
   last4         String
-  /// Read-only by default. When true, the token may call the write tools
-  /// (add/remove members, set org permissions, dismiss flags).
+  /// Read-only by default. When true, the token may call the write tools.
   canWrite      Boolean       @default(false)
+  /// Programs the token is narrowed to. Empty = every program its owner can reach;
+  /// a narrowed token also cannot use org-wide tools.
+  programIds    String[]      @default([])
   createdAt     DateTime      @default(now())
   lastUsedAt    DateTime?
   expiresAt     DateTime?

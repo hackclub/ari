@@ -1,4 +1,4 @@
-import { db } from '$lib/server/db';
+import { isHttpError } from '@sveltejs/kit';
 import type { McpContext } from '../auth';
 
 export interface ToolSpec {
@@ -15,8 +15,34 @@ export interface Tool {
 
 export function requireWrite(context: McpContext): void {
 	if (!context.canWrite) {
-		throw new Error('This token is read-only. Mint a read-write token to use write tools.');
+		throw new ToolRefusal(
+			403,
+			'This token is read-only. Mint a read-write token to use write tools.'
+		);
 	}
+}
+
+export class ToolRefusal extends Error {
+	constructor(
+		readonly status: number,
+		message: string
+	) {
+		super(message);
+	}
+}
+
+// the shared app guards throw http errors: a tool reports them as a plain message
+export function toolError(caught: unknown): { status: number; message: string } {
+	if (isHttpError(caught)) return { status: caught.status, message: caught.body.message };
+	if (caught instanceof ToolRefusal) return { status: caught.status, message: caught.message };
+	return { status: 400, message: (caught as Error).message };
+}
+
+export function unwrap<Result extends { ok: boolean }>(
+	result: Result
+): Extract<Result, { ok: true }> {
+	if (!result.ok) throw new Error((result as { error?: string }).error ?? 'The request failed.');
+	return result as Extract<Result, { ok: true }>;
 }
 
 export const submissionStatuses = [
@@ -29,15 +55,6 @@ export const submissionStatuses = [
 	'withdrawn',
 	'secondpass'
 ] as const;
-
-export async function resolveProgram(reference: string) {
-	const program = await db.program.findUnique({
-		where: { id: reference },
-		select: { id: true, name: true, status: true }
-	});
-	if (!program) throw new Error(`No program matches "${reference}" (try list_programs).`);
-	return program;
-}
 
 export function clampLimit(input: unknown, fallback = 25, max = 100): number {
 	const value = typeof input === 'number' && Number.isFinite(input) ? Math.floor(input) : fallback;

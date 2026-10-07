@@ -27,11 +27,12 @@
 	const items = $derived<DropdownItem[]>([
 		...(canDocs ? [{ label: 'Docs', icon: 'book' as const, href: '/docs' }] : []),
 		...(canAdmin ? [{ label: 'Admin', icon: 'shield' as const, href: '/admin' }] : []),
+		{ label: 'MCP', icon: 'lock', href: '/mcp' },
 		{
 			label: 'Sign out',
 			icon: 'logout',
 			tone: 'danger',
-			separatorBefore: canDocs || canAdmin,
+			separatorBefore: true,
 			onSelect: () => logoutForm?.requestSubmit()
 		}
 	]);

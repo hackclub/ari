@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import { allPermissions, orgViewProgramPermissions } from '$lib/data';
-import type { OrgPermission, Prisma, ProgramPermission, Track } from '$db';
+import type { OrgPermission, Prisma, ProgramPermission, SubmissionStatus, Track } from '$db';
 
 type MakerIdentity = { email: string; slackId: string | null };
 
@@ -142,6 +142,23 @@ export function selfReviewWhere(
 		ownShips.push({ collaborators: { some: { maker: { slackId: user.slackId } } } });
 	}
 	return { NOT: { OR: ownShips } };
+}
+
+// held and fraud-review ships are hidden because the review screen would refuse them
+export function visibleShipWhere(
+	user: App.SessionUser,
+	programId: string,
+	excludeOwnProjects: boolean
+): Prisma.SubmissionWhereInput {
+	const hiddenStatuses: SubmissionStatus[] = [];
+	if (!hasPermission(user, programId, 'SECOND_PASS')) hiddenStatuses.push('secondpass');
+	if (!hasPermission(user, programId, 'VIEW_FRAUD')) hiddenStatuses.push('fraudreview');
+	return {
+		programId,
+		...trackWhere(trackScope(user, programId)),
+		...(hiddenStatuses.length ? { status: { notIn: hiddenStatuses } } : {}),
+		...selfReviewWhere(user, excludeOwnProjects, programId)
+	};
 }
 
 // caller checks the program setting first. must stay in step with selfReviewWhere so a

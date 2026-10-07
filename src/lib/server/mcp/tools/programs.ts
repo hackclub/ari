@@ -1,15 +1,20 @@
 import { db } from '$lib/server/db';
-import { clampLimit, resolveProgram, submissionStatuses, type Tool } from './shared';
+import { hasPermission, trackScope } from '$lib/server/authz';
+import { integrationKinds } from '$lib/server/activityLog';
+import { programFor, reachablePrograms, shipsWhere } from './access';
+import { clampLimit, submissionStatuses, type Tool } from './shared';
 
 export const listPrograms: Tool = {
 	spec: {
 		name: 'list_programs',
 		description:
-			'List every program (hackathon/event) with status, accepted evidence types, and a count of submissions currently awaiting review.',
+			'List the programs you can open, with status, accepted evidence types, and how many of the submissions you can see are awaiting review. members is null unless you can view the program’s reviewers.',
 		inputSchema: { type: 'object', properties: {}, additionalProperties: false }
 	},
-	handler: async () => {
+	handler: async (_args, context) => {
+		const reachable = await reachablePrograms(context);
 		const programs = await db.program.findMany({
+			where: { id: { in: reachable.map((program) => program.id) } },
 			orderBy: { createdAt: 'desc' },
 			select: {
 				id: true,
@@ -25,7 +30,7 @@ export const listPrograms: Tool = {
 		});
 		const pending = await db.submission.groupBy({
 			by: ['programId'],
-			where: { status: 'pending' },
+			where: { status: 'pending', ...shipsWhere(context, reachable) },
 			_count: true
 		});
 		const pendingByProgram = new Map(pending.map((group) => [group.programId, group._count]));
@@ -38,7 +43,9 @@ export const listPrograms: Tool = {
 			allowVms: program.allowVms,
 			secondPass: program.secondPass,
 			weeklyReviewGoal: program.weeklyReviewGoal,
-			members: program._count.memberships,
+			members: hasPermission(context.user, program.id, 'VIEW_REVIEWERS')
+				? program._count.memberships
+				: null,
 			pending: pendingByProgram.get(program.id) ?? 0
 		}));
 	}
@@ -48,7 +55,7 @@ export const programStats: Tool = {
 	spec: {
 		name: 'program_stats',
 		description:
-			'Submission counts broken down by status for one program, plus reviewer/organizer headcount and the weekly review goal.',
+			'Counts of the submissions you can see in one program, by status. Reviewer headcount and the point of contact are included when you can view the program’s reviewers.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -58,16 +65,21 @@ export const programStats: Tool = {
 			additionalProperties: false
 		}
 	},
-	handler: async (args) => {
-		const program = await resolveProgram(String(args.program));
+	handler: async (args, context) => {
+		const found = await programFor(context, args.program);
+		const program = { id: found.id, name: found.name, status: found.status };
 		const grouped = await db.submission.groupBy({
 			by: ['status'],
-			where: { programId: program.id },
+			where: shipsWhere(context, [found]),
 			_count: true
 		});
 		const byStatus: Record<string, number> = {};
 		for (const status of submissionStatuses) byStatus[status] = 0;
 		for (const group of grouped) byStatus[group.status] = group._count;
+		const total = Object.values(byStatus).reduce((sum, count) => sum + count, 0);
+		if (!hasPermission(context.user, program.id, 'VIEW_REVIEWERS')) {
+			return { program, submissionsByStatus: byStatus, total };
+		}
 		const members = await db.membership.findMany({
 			where: { programId: program.id },
 			select: { permissions: true, isPoc: true, user: { select: { email: true } } }
@@ -75,7 +87,7 @@ export const programStats: Tool = {
 		return {
 			program,
 			submissionsByStatus: byStatus,
-			total: Object.values(byStatus).reduce((sum, count) => sum + count, 0),
+			total,
 			members: members.length,
 			operators: members.filter((member) => member.isPoc || member.permissions.length > 0).length,
 			poc: members.find((member) => member.isPoc)?.user.email ?? null
@@ -87,7 +99,7 @@ export const getProgram: Tool = {
 	spec: {
 		name: 'get_program',
 		description:
-			'Full configuration for one program: status, accepted evidence, feature flags (collaborative/VMs/second-pass), checklist items, custom review fields, flag rules, and whether an outbound webhook is configured.',
+			'Full configuration for one program: status, accepted evidence, feature flags (collaborative/VMs/second-pass), checklist items, custom review fields, flag rules, and whether an outbound webhook is configured. Needs MANAGE_SETTINGS on the program.',
 		inputSchema: {
 			type: 'object',
 			properties: { program: { type: 'string', description: 'Program id.' } },
@@ -95,8 +107,8 @@ export const getProgram: Tool = {
 			additionalProperties: false
 		}
 	},
-	handler: async (args) => {
-		const { id } = await resolveProgram(String(args.program));
+	handler: async (args, context) => {
+		const { id } = await programFor(context, args.program, 'MANAGE_SETTINGS');
 		const program = await db.program.findUnique({
 			where: { id },
 			include: {
@@ -138,7 +150,7 @@ export const listActivity: Tool = {
 	spec: {
 		name: 'list_activity',
 		description:
-			'Recent activity-log events for a program (decisions, member changes, settings, webhooks, flags), newest first.',
+			'Recent events in a program’s audit log (decisions, member changes, settings, flags), newest first, limited to your tracks. Needs VIEW_AUDIT_LOG on the program.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -149,10 +161,29 @@ export const listActivity: Tool = {
 			additionalProperties: false
 		}
 	},
-	handler: async (args) => {
-		const { id } = await resolveProgram(String(args.program));
+	handler: async (args, context) => {
+		const { id } = await programFor(context, args.program, 'VIEW_AUDIT_LOG');
+		// the same filter as the audit log page
+		const scope = trackScope(context.user, id);
+		const inScope = scope
+			? await db.submission.findMany({
+					where: { programId: id, track: { in: scope } },
+					select: { id: true }
+				})
+			: null;
 		return db.activityEvent.findMany({
-			where: { programId: id },
+			where: {
+				programId: id,
+				kind: { notIn: [...integrationKinds] },
+				...(inScope
+					? {
+							OR: [
+								{ submissionId: null },
+								{ submissionId: { in: inScope.map((submission) => submission.id) } }
+							]
+						}
+					: {})
+			},
 			orderBy: { createdAt: 'desc' },
 			take: clampLimit(args.limit, 30),
 			select: { kind: true, text: true, createdAt: true, submissionId: true }

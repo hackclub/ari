@@ -6,9 +6,13 @@ import { hasOrgPermission } from '$lib/server/authz';
 import { imageUploadsConfigured } from '$lib/server/imageUpload';
 import { ago } from '$lib/server/serialize';
 import { channelStatus } from '$lib/server/slackChannels';
-import { webhooksBaseUrl } from '$lib/server/webhooks';
-import type { SettingsValues, ToolsDraft } from '$lib/settingsRules';
 import { activeIngestSecret, maskSecret } from './secrets';
+import {
+	ingestEndpointFor,
+	settingsProgramInclude,
+	settingsValuesOf,
+	toolsDraftOf
+} from './values';
 
 const inboundStatusLabel = {
 	ACCEPTED: 'Accepted',
@@ -29,11 +33,7 @@ export async function loadSettings(programId: string, user: App.SessionUser, ori
 		await Promise.all([
 			db.program.findUnique({
 				where: { id: programId },
-				include: {
-					checklist: { orderBy: { order: 'asc' } },
-					reviewFields: { orderBy: { order: 'asc' } },
-					snippets: { orderBy: { name: 'asc' } }
-				}
+				include: settingsProgramInclude
 			}),
 			activeIngestSecret(programId),
 			db.outboundEndpoint.findUnique({ where: { programId } }),
@@ -52,61 +52,9 @@ export async function loadSettings(programId: string, user: App.SessionUser, ori
 		]);
 	if (!program) throw error(404, 'Program not found');
 
-	const settings: SettingsValues = {
-		displayName: program.name,
-		iconUrl: program.iconUrl ?? '',
-		cardBgUrl: program.cardBgUrl ?? '',
-		trackingStartsAt: program.trackingStartsAt?.toISOString().slice(0, 10) ?? '',
-		accepts: {
-			commits: program.accepts.includes('commits'),
-			elapsed: program.accepts.includes('elapsed'),
-			devlog: program.accepts.includes('devlog')
-		},
-		collaborative: program.collaborative,
-		secondPass: program.secondPass,
-		secondPassApproved: program.secondPassApproved,
-		secondPassChanges: program.secondPassChanges,
-		secondPassRejected: program.secondPassRejected,
-		secondPassOrganizerBypass: program.secondPassOrganizerBypass,
-		screenIdentity: program.screenIdentity,
-		screenHackatime: program.screenHackatime,
-		reviewersCannotReviewOwnProjects: program.reviewersCannotReviewOwnProjects,
-		allowDeflation: program.allowDeflation,
-		hoursJustification: program.hoursJustification,
-		reviewerReauth: program.reviewerReauth,
-		reviewerReauthTtlMinutes: String(program.reviewerReauthTtlMinutes),
-		priorityReview: program.priorityReview,
-		priorityReviewMessage: program.priorityReviewMessage ?? '',
-		reviewGoal: String(program.weeklyReviewGoal),
-		reviewersChannel: program.reviewersChannelId ?? '',
-		outUrl: outbound?.url ?? '',
-		outEnabled: outbound?.enabled ?? true
-	};
+	const settings = settingsValuesOf(program, outbound);
+	const tools = toolsDraftOf(program);
 
-	const tools: ToolsDraft = {
-		checklist: program.checklist.map((item) => ({
-			id: item.id,
-			label: item.label,
-			tracks: item.tracks
-		})),
-		fields: program.reviewFields.map((field) => ({
-			id: field.id,
-			type: field.type,
-			label: field.label,
-			description: field.description,
-			key: field.key,
-			options: field.options,
-			required: field.required,
-			tracks: field.tracks
-		})),
-		snippets: program.snippets.map((snippet) => ({
-			id: snippet.id,
-			name: snippet.name,
-			body: snippet.body
-		}))
-	};
-
-	const ingestBase = webhooksBaseUrl();
 	const appBase = (env.BASE_URL?.trim() || origin).replace(/\/$/, '');
 
 	return {
@@ -124,7 +72,7 @@ export async function loadSettings(programId: string, user: App.SessionUser, ori
 			? channelStatus(program.reviewersChannelId)
 			: Promise.resolve(null),
 		webhook: {
-			endpoint: ingestBase ? `${ingestBase}/api/ingest/${programId}` : null,
+			endpoint: ingestEndpointFor(programId),
 			inSecretMasked: ingestSecret ? maskSecret(ingestSecret.last4) : null,
 			outSecretMasked: outbound?.last4 ? maskSecret(outbound.last4) : null,
 			deliveries: deliveries.map((delivery) => ({

@@ -89,6 +89,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				tokenHash: hash,
 				userId: data.userId,
 				canWrite: data.canWrite,
+				programIds: data.programIds,
 				label: 'OAuth connection (claude.ai)',
 				last4,
 				expiresAt,

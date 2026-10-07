@@ -1,11 +1,12 @@
 import { db } from '$lib/server/db';
-import { clampLimit, personInput, personWhere, resolveProgram, type Tool } from './shared';
+import { programFor, reachablePrograms, shipsWhere } from './access';
+import { clampLimit, personInput, personWhere, type Tool } from './shared';
 
 export const listReviews: Tool = {
 	spec: {
 		name: 'list_reviews',
 		description:
-			'Recent review decisions (the audit history), newest first. Filter by program and/or reviewer email.',
+			'Recent review decisions (the audit history) on ships you can see, newest first, in programs where you have VIEW_REVIEWED. Filter by program and/or reviewer email.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -16,11 +17,13 @@ export const listReviews: Tool = {
 			additionalProperties: false
 		}
 	},
-	handler: async (args) => {
-		const programId = args.program ? (await resolveProgram(String(args.program))).id : undefined;
+	handler: async (args, context) => {
+		const programs = args.program
+			? [await programFor(context, args.program, 'VIEW_REVIEWED')]
+			: await reachablePrograms(context, 'VIEW_REVIEWED');
 		return db.review.findMany({
 			where: {
-				...(programId ? { submission: { programId } } : {}),
+				submission: shipsWhere(context, programs),
 				...(args.reviewerEmail
 					? { reviewer: { email: String(args.reviewerEmail).toLowerCase() } }
 					: {})
@@ -52,7 +55,7 @@ export const reviewerStats: Tool = {
 	spec: {
 		name: 'reviewer_stats',
 		description:
-			'Review productivity for one reviewer, resolved by email, Slack id, or name: how many submissions they reviewed, broken down by decision and by program, total approved minutes and seconds, and their most recent decisions. Optionally scope to one program.',
+			'Review productivity for one reviewer, resolved by email, Slack id, or name: how many submissions they reviewed, broken down by decision and by program, total approved minutes and seconds, and their most recent decisions. Counts only programs where you have VIEW_REVIEWERS. Optionally scope to one program.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -66,17 +69,21 @@ export const reviewerStats: Tool = {
 			additionalProperties: false
 		}
 	},
-	handler: async (args) => {
+	handler: async (args, context) => {
 		const { conditions } = personWhere(args);
+		const programs = args.program
+			? [await programFor(context, args.program, 'VIEW_REVIEWERS')]
+			: await reachablePrograms(context, 'VIEW_REVIEWERS');
+		const programIds = programs.map((program) => program.id);
+		// only someone on the roster of a program you can see the reviewers of
 		const reviewer = await db.user.findFirst({
-			where: { OR: conditions },
+			where: { OR: conditions, memberships: { some: { programId: { in: programIds } } } },
 			select: { id: true, name: true, email: true, slackId: true, orgPermissions: true }
 		});
 		if (!reviewer) throw new Error('No reviewer matches that email, Slack id, or name.');
-		const programId = args.program ? (await resolveProgram(String(args.program))).id : undefined;
 		const where = {
 			reviewerId: reviewer.id,
-			...(programId ? { submission: { programId } } : {})
+			submission: { programId: { in: programIds } }
 		};
 
 		const [decisionGroups, programRows, totals, recent, total] = await Promise.all([
@@ -113,7 +120,7 @@ export const reviewerStats: Tool = {
 
 		return {
 			reviewer,
-			scope: programId ? String(args.program) : 'all-programs',
+			scope: args.program ? String(args.program) : 'all-programs',
 			totalReviews: total,
 			approvedMinutes: totals._sum.approvedMinutes ?? 0,
 			approvedSeconds: totals._sum.approvedSeconds ?? 0,

@@ -1,8 +1,9 @@
 <script lang="ts">
 	import PageHeader from '$lib/components/app/PageHeader.svelte';
-	import { Button, Card, Textarea, ThemeToggle } from '$lib/components/ui';
+	import { Button, Card, Textarea } from '$lib/components/ui';
 	import { customCss } from '$lib/customCss.svelte';
 	import PersonalTemplates from './components/PersonalTemplates.svelte';
+	import ThemeEditor from './components/ThemeEditor.svelte';
 
 	let draft = $state(customCss.text);
 	const dirty = $derived(draft !== customCss.text);
@@ -13,20 +14,14 @@
 <PageHeader title="Settings" description="Your preferences." />
 
 <Card>
-	<div class="row">
-		<div>
-			<h2>Appearance</h2>
-			<p>Switch between the light and dark theme.</p>
-		</div>
-		<ThemeToggle showLabel />
-	</div>
+	<ThemeEditor />
 </Card>
 
 <Card>
 	<div class="row">
 		<div>
 			<h2>Custom CSS</h2>
-			<p>Extra styles applied on top of everything, in this browser only.</p>
+			<p>Extra styles applied on top of the theme, in this browser only.</p>
 		</div>
 	</div>
 	<div class="cssField">
@@ -63,11 +58,6 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-3);
-	}
-	.row + .row {
-		margin-top: var(--space-4);
-		padding-top: var(--space-4);
-		border-top: 1px solid var(--border);
 	}
 	h2 {
 		margin: 0;

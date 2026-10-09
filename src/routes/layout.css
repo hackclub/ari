@@ -161,6 +161,165 @@ a {
 	--on-ok: #06231a;
 }
 
+html[data-theme='nord'] {
+	color-scheme: light;
+	--bg: #d8dee9;
+	--surface: #eceff4;
+	--surface-2: #e5e9f0;
+	--surface-3: #d8dee9;
+	--border: #cbd3e1;
+	--border-2: #abb8cf;
+	--text: #2e3440;
+	--text-2: #3b4252;
+	--text-3: #66718c;
+	--primary: #3f7e93;
+	--primary-soft: #dce7ec;
+	--ring: rgba(63, 126, 147, 0.32);
+	--on-primary: #fff;
+
+	--accent-red: #a6535c;
+	--accent-orange: #b06a4e;
+	--accent-yellow: #96742a;
+	--accent-green: #677f4b;
+	--accent-cyan: #3f7e93;
+	--accent-blue: #4a6d97;
+	--accent-purple: #9678a0;
+
+	--grad: linear-gradient(165deg, #4b8ba0 0%, #3f7e93 60%, #356c7e 100%);
+	--grad-soft: linear-gradient(165deg, rgba(63, 126, 147, 0.08), rgba(63, 126, 147, 0.03));
+}
+
+html.dark[data-theme='nord'] {
+	color-scheme: dark;
+	--bg: #2e3440;
+	--surface: #3b4252;
+	--surface-2: #434c5e;
+	--surface-3: #4c566a;
+	--border: #434c5e;
+	--border-2: #4c566a;
+	--text: #eceff4;
+	--text-2: #d8dee9;
+	--text-3: #7e88a0;
+	--primary: #88c0d0;
+	--primary-soft: rgba(136, 192, 208, 0.16);
+	--ring: rgba(136, 192, 208, 0.4);
+	--on-primary: #2e3440;
+
+	--accent-red: #bf616a;
+	--accent-orange: #d08770;
+	--accent-yellow: #ebcb8b;
+	--accent-green: #a3be8c;
+	--accent-cyan: #88c0d0;
+	--accent-blue: #81a1c1;
+	--accent-purple: #b48ead;
+
+	--grad: linear-gradient(165deg, #93c7d6 0%, #88c0d0 60%, #74aebd 100%);
+	--grad-soft: linear-gradient(165deg, rgba(136, 192, 208, 0.08), rgba(136, 192, 208, 0.03));
+}
+
+html.dark[data-theme='dracula'] {
+	color-scheme: dark;
+	--bg: #282a36;
+	--surface: #2e3141;
+	--surface-2: #44475a;
+	--surface-3: #4a4e63;
+	--border: #44475a;
+	--border-2: #6272a4;
+	--text: #f8f8f2;
+	--text-2: #bfc4dd;
+	--text-3: #6272a4;
+	--primary: #ff79c6;
+	--primary-soft: rgba(255, 121, 198, 0.16);
+	--ring: rgba(255, 121, 198, 0.4);
+	--on-primary: #282a36;
+
+	--accent-red: #ff5555;
+	--accent-orange: #ffb86c;
+	--accent-yellow: #f1fa8c;
+	--accent-green: #50fa7b;
+	--accent-cyan: #8be9fd;
+	--accent-blue: #bd93f9;
+	--accent-purple: #ff79c6;
+
+	--grad: linear-gradient(165deg, #ff8ccb 0%, #ff79c6 60%, #ef63b4 100%);
+	--grad-soft: linear-gradient(165deg, rgba(255, 121, 198, 0.08), rgba(255, 121, 198, 0.03));
+}
+
+html[data-theme='catppuccin'] {
+	color-scheme: light;
+	--bg: #eff1f5;
+	--surface: #e6e9ef;
+	--surface-2: #dce0e8;
+	--surface-3: #ccd0da;
+	--border: #dce0e8;
+	--border-2: #bcc0cc;
+	--text: #4c4f69;
+	--text-2: #5c5f77;
+	--text-3: #8c8fa1;
+	--primary: #8839ef;
+	--primary-soft: rgba(136, 57, 239, 0.12);
+	--ring: rgba(136, 57, 239, 0.28);
+	--on-primary: #fff;
+
+	--accent-red: #d20f39;
+	--accent-orange: #fe640b;
+	--accent-yellow: #df8e1d;
+	--accent-green: #40a02b;
+	--accent-cyan: #179299;
+	--accent-blue: #1e66f5;
+	--accent-purple: #8839ef;
+
+	--grad: linear-gradient(165deg, #9a5cf0 0%, #8839ef 60%, #722fd0 100%);
+	--grad-soft: linear-gradient(165deg, rgba(136, 57, 239, 0.08), rgba(136, 57, 239, 0.03));
+}
+
+html.dark[data-theme='catppuccin'] {
+	color-scheme: dark;
+	--bg: #1e1e2e;
+	--surface: #181825;
+	--surface-2: #313244;
+	--surface-3: #45475a;
+	--border: #313244;
+	--border-2: #45475a;
+	--text: #cdd6f4;
+	--text-2: #bac2de;
+	--text-3: #7f849c;
+	--primary: #cba6f7;
+	--primary-soft: rgba(203, 166, 247, 0.16);
+	--ring: rgba(203, 166, 247, 0.4);
+	--on-primary: #1e1e2e;
+
+	--accent-red: #f38ba8;
+	--accent-orange: #fab387;
+	--accent-yellow: #f9e2af;
+	--accent-green: #a6e3a1;
+	--accent-cyan: #94e2d5;
+	--accent-blue: #89dceb;
+	--accent-purple: #cba6f7;
+
+	--grad: linear-gradient(165deg, #d5b8f8 0%, #cba6f7 60%, #b894ec 100%);
+	--grad-soft: linear-gradient(165deg, rgba(203, 166, 247, 0.08), rgba(203, 166, 247, 0.03));
+}
+
+/* the accent pieces derive from --custom-accent, so one picker repaints both modes */
+html[data-theme='custom'] {
+	--primary: var(--custom-accent);
+	--primary-soft: color-mix(in srgb, var(--custom-accent) 14%, transparent);
+	--ring: color-mix(in srgb, var(--custom-accent) 42%, transparent);
+	--on-primary: #fff;
+	--grad: linear-gradient(
+		165deg,
+		var(--custom-accent) 0%,
+		color-mix(in srgb, var(--custom-accent) 82%, black) 60%,
+		color-mix(in srgb, var(--custom-accent) 72%, black) 100%
+	);
+	--grad-soft: linear-gradient(
+		165deg,
+		color-mix(in srgb, var(--custom-accent) 8%, transparent),
+		color-mix(in srgb, var(--custom-accent) 3%, transparent)
+	);
+}
+
 *,
 *::before,
 *::after {

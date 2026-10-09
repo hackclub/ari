@@ -2,6 +2,7 @@
 	import PageHeader from '$lib/components/app/PageHeader.svelte';
 	import { Button, Card, Textarea, ThemeToggle } from '$lib/components/ui';
 	import { customCss } from '$lib/customCss.svelte';
+	import PersonalTemplates from './components/PersonalTemplates.svelte';
 
 	let draft = $state(customCss.text);
 	const dirty = $derived(draft !== customCss.text);
@@ -49,6 +50,10 @@
 			>
 		{/if}
 	</div>
+</Card>
+
+<Card>
+	<PersonalTemplates />
 </Card>
 
 <style>

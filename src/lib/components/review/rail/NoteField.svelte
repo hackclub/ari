@@ -1,11 +1,22 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { SuggestionMenu, Textarea, type Suggestion } from '$lib/components/ui';
+	import { personalTemplates } from '$lib/personalTemplates.svelte';
 	import { useReview } from '$lib/review/state/reviewPage.svelte';
 
 	const { context, draft, validation } = useReview();
 
-	const snippets = $derived(context.data.snippets);
+	const programSnippets = $derived(context.data.snippets);
+	// personal templates win on a name clash so a reviewer's own wording sticks
+	const snippets = $derived.by(() => {
+		const personal = personalTemplates.enabled.map((template) => ({
+			id: template.id,
+			name: template.name,
+			body: template.body
+		}));
+		const taken = new Set(personal.map((template) => template.name));
+		return [...personal, ...programSnippets.filter((snippet) => !taken.has(snippet.name))];
+	});
 
 	let textarea: HTMLTextAreaElement | null = null;
 	// the text after the slash being typed. null while the menu is closed

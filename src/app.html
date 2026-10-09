@@ -7,8 +7,14 @@
 		<script nonce="%sveltekit.nonce%">
 			(function () {
 				try {
-					var dark = localStorage.getItem('ari-theme') !== 'light';
+					var family = localStorage.getItem('ari-theme-family') || 'default';
+					var dark = family === 'dracula' ? true : localStorage.getItem('ari-theme') !== 'light';
+					document.documentElement.dataset.theme = family;
 					document.documentElement.classList.toggle('dark', dark);
+					if (family === 'custom') {
+						var accent = localStorage.getItem('ari-custom-accent');
+						if (accent) document.documentElement.style.setProperty('--custom-accent', accent);
+					}
 				} catch {}
 			})();
 		</script>

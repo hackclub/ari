@@ -136,6 +136,7 @@ export const getSubmission: Tool = {
 		if (!submission) throw new Error(`No submission with id "${ship.id}".`);
 		return {
 			...submission,
+			reviewerNote: undefined,
 			reviews: seesHistory ? submission.reviews : undefined,
 			flags: warnings.map((warning) => ({
 				kind: warning.kind,

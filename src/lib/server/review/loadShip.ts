@@ -180,6 +180,7 @@ export function shipSummary(ship: LoadedShip, people: ShipPeople, color: string)
 		projectId: ship.externalId,
 		title: ship.title,
 		description: ship.description,
+		reviewerNote: ship.reviewerNote ?? '',
 		author: collaborative
 			? joinNames(people.collaborators.map((person) => person.name))
 			: shipAuthorName(ship, ship.maker),

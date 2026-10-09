@@ -565,6 +565,8 @@ model Submission {
   /// Maker-written project description (required at ingest going forward;
   /// nullable for ships that predate the field).
   description         String?
+  /// internal reviewer note, review page only, never sent outbound or shown to makers.
+  reviewerNote        String                   @default("")
   repoUrl             String
   demoUrl             String?
   claimedHours        Int

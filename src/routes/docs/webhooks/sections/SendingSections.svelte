@@ -3,7 +3,7 @@
 	import DocSection from '$lib/components/docs/DocSection.svelte';
 	import Endpoint from '$lib/components/docs/Endpoint.svelte';
 	import Note from '$lib/components/docs/Note.svelte';
-	import { curlSample, sampleInSolo } from '../examples';
+	import { curlSample, legacyCurlSample, sampleInSolo } from '../examples';
 
 	let { baseUrl, programId }: { baseUrl: string; programId: string } = $props();
 </script>
@@ -15,12 +15,22 @@
 
 <DocSection id="authentication" title="Signing requests">
 	<p class="docProse">
-		Every request has to be signed so Ari knows it really came from you. Take the exact bytes you
-		are about to send, compute an HMAC-SHA256 of them with your signing secret, and put the hex
-		result in the <code>X-Ari-Signature</code> header. Sign the raw body, not a re-serialized copy,
-		or the signatures will not match. Your secret lives in
+		Every request has to be signed so Ari knows it really came from you. Take the current unix time
+		in whole seconds and put it in the <code>X-Ari-Timestamp</code> header. Then build the string
+		<code>timestamp.body</code>: the timestamp in decimal, a literal dot, and the exact bytes you
+		are about to send. Compute an HMAC-SHA256 of that string with your signing secret and put the
+		hex result in the <code>X-Ari-Signature</code> header. Sign the raw body, not a re-serialized
+		copy, or the signatures will not match. Ari rejects a timestamp more than 300 seconds away from
+		its own clock, so a captured request cannot be replayed later. Your secret lives in
 		<code>Settings → Webhooks</code>, where you can also roll it if it ever leaks.
 	</p>
+	<Note>
+		<p>
+			Older integrations sign the raw body alone and send no <code>X-Ari-Timestamp</code> header. That
+			legacy form still works, but it has no replay protection, so new integrations should send the timestamp.
+		</p>
+	</Note>
+	<CodeBlock title="Legacy signature" code={legacyCurlSample} />
 </DocSection>
 
 <DocSection id="sending" title="Sending a ship">

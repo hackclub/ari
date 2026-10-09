@@ -111,8 +111,9 @@ export async function invitePeople(
 		});
 		if (existing?.id === systemUserId) continue;
 		if (existing) {
+			const self = email === actor.email.toLowerCase();
 			// own email skipped: nobody changes their own org permissions on any grant path
-			if (orgPermissions.length > 0 && email !== actor.email.toLowerCase()) {
+			if (orgPermissions.length > 0 && !self) {
 				const merged = allOrgPermissions.filter(
 					(permission) =>
 						existing.orgPermissions.includes(permission) || orgPermissions.includes(permission)
@@ -121,6 +122,12 @@ export async function invitePeople(
 					await db.user.update({ where: { id: existing.id }, data: { orgPermissions: merged } });
 				}
 			}
+			// own email skipped again for program seats: only someone who already runs every
+			// program may seat themselves
+			const canSeatSelf =
+				hasOrgPermission(actor, 'OPERATE_ALL_PROGRAMS') ||
+				hasOrgPermission(actor, 'MANAGE_PROGRAMS');
+			if (self && !canSeatSelf) continue;
 			for (const programId of programIds)
 				await addExistingUserToProgram(actor, existing.id, email, programId, permissions, label);
 		} else if (programIds.length) {
@@ -197,11 +204,19 @@ export async function removePerson(
 		select: {
 			id: true,
 			slackId: true,
+			orgPermissions: true,
 			memberships: { select: { programId: true, permissions: true, isPoc: true } }
 		}
 	});
 	// deleting the system account would cascade away the automated decisions it anchors
 	if (user?.id === systemUserId) return refuse(400, "The system account can't be removed.");
+	// removing a holder is the inverse of a grant, so it takes the granting tier
+	if (user && user.orgPermissions.length > 0) {
+		if (!hasOrgPermission(actor, 'GRANT_ORG_PERMS'))
+			return refuse(403, 'You do not have permission to remove people who hold org permissions.');
+		if (user.orgPermissions.some((permission) => !hasOrgPermission(actor, permission)))
+			return refuse(403, 'You can only remove people whose org permissions you hold yourself.');
+	}
 
 	const memberships = user?.memberships ?? [];
 	// one transaction, so a crash cannot leave the deletion without its audit rows

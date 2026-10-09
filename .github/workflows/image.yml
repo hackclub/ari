@@ -83,4 +83,4 @@ jobs:
           curl -fsS -X POST \
             ${{ secrets.WEBHOOK_URL }} \
             -H "Content-Type: application/json" \
-            -d '{"tag": "${{ github.sha }}"}'
+            -d "{\"tag\": \"sha-${GITHUB_SHA::7}\"}"

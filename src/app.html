@@ -4,12 +4,12 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="text-scale" content="scale" />
-		<script>
+		<script nonce="%sveltekit.nonce%">
 			(function () {
 				try {
 					var dark = localStorage.getItem('ari-theme') !== 'light';
 					document.documentElement.classList.toggle('dark', dark);
-				} catch (e) {}
+				} catch {}
 			})();
 		</script>
 		%sveltekit.head%

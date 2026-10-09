@@ -1,6 +1,12 @@
 import { afterAll, afterEach, describe, expect, spyOn, test } from 'bun:test';
 import { createHash } from 'node:crypto';
-import { authServerMetadata, baseUrl, protectedResourceMetadata, verifyPkce } from './oauth';
+import {
+	authServerMetadata,
+	baseUrl,
+	protectedResourceMetadata,
+	validRedirectUri,
+	verifyPkce
+} from './oauth';
 import { generateMcpToken, hashMcpToken, mcpTokenPrefix } from './auth';
 import { tail4 } from './log';
 
@@ -66,6 +72,32 @@ describe('verifyPkce', () => {
 		expect(verifyPkce(verifier, `${challenge}=`)).toBe(false);
 		expect(verifyPkce('', challenge)).toBe(false);
 		expect(verifyPkce(verifier, '')).toBe(false);
+	});
+});
+
+describe('validRedirectUri', () => {
+	test('accepts absolute https and loopback http on any port', () => {
+		expect(validRedirectUri('https://claude.ai/api/mcp/auth_callback')).toBe(true);
+		expect(validRedirectUri('https://example.com:8443/cb?x=1')).toBe(true);
+		expect(validRedirectUri('http://localhost/callback')).toBe(true);
+		expect(validRedirectUri('http://localhost:61234/callback')).toBe(true);
+		expect(validRedirectUri('http://127.0.0.1:3000/')).toBe(true);
+	});
+
+	test('rejects relative, non-https, non-loopback, credentialed and fragment uris', () => {
+		expect(validRedirectUri('')).toBe(false);
+		expect(validRedirectUri(null)).toBe(false);
+		expect(validRedirectUri(42)).toBe(false);
+		expect(validRedirectUri('/callback')).toBe(false);
+		expect(validRedirectUri('http://example.com/cb')).toBe(false);
+		expect(validRedirectUri('http://localhost.evil.com/cb')).toBe(false);
+		expect(validRedirectUri('http://[::1]/cb')).toBe(false);
+		expect(validRedirectUri('https://user:pass@example.com/cb')).toBe(false);
+		expect(validRedirectUri('https://user@example.com/cb')).toBe(false);
+		expect(validRedirectUri('https://example.com/cb#frag')).toBe(false);
+		expect(validRedirectUri('https://example.com/cb#')).toBe(false);
+		expect(validRedirectUri('javascript:alert(1)')).toBe(false);
+		expect(validRedirectUri('custom-scheme://callback')).toBe(false);
 	});
 });
 

@@ -3,14 +3,12 @@ import { encrypt } from '$lib/server/crypto';
 import { accentColors, allOrgPermissions } from '$lib/data';
 import { oauthScopes, type HcIdentity, type HcTokens } from '$lib/server/auth';
 import { systemUserId } from '$lib/server/systemUser';
+import { safeReturnPath as sharedSafeReturnPath } from '$lib/returnPath';
 import type { User } from '$db';
 
-// same-site absolute paths only, so the round-trip cannot become an open redirect.
 // login and callback both apply it: neither side trusts a raw value
-export function safeReturnPath(raw: string | null | undefined): string {
-	if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/programs';
-	return raw;
-}
+export const safeReturnPath = (raw: string | null | undefined): string =>
+	sharedSafeReturnPath(raw, '/programs');
 
 function colorFor(email: string): string {
 	let hash = 0;
@@ -21,7 +19,7 @@ function colorFor(email: string): string {
 }
 
 export type SignInOutcome =
-	| { denied: true }
+	| { denied: true; reason: 'noInvite' | 'identityMismatch' }
 	| { denied: false; user: User; syncChannels: boolean; joinedProgramIds: string[] };
 
 // first human wins the bootstrap, everyone after is invite-gated by email.
@@ -58,6 +56,18 @@ export async function signInUser(
 		});
 		let user = identityAccount?.user ?? emailUser;
 
+		// an email reached by a different hack club identity than the one already bound to
+		// that user is refused, never rebound: the binding is what makes the identity stable
+		if (!identityAccount && emailUser && identity.id) {
+			const boundAccount = await transaction.account.findUnique({
+				where: { userId: emailUser.id },
+				select: { hackClubUserId: true }
+			});
+			if (boundAccount?.hackClubUserId && boundAccount.hackClubUserId !== identity.id) {
+				return { denied: true, reason: 'identityMismatch' } as const;
+			}
+		}
+
 		if (!user) {
 			const newUser = {
 				email: identity.email,
@@ -79,7 +89,7 @@ export async function signInUser(
 					where: { email: { equals: identity.email, mode: 'insensitive' }, acceptedAt: null },
 					orderBy: { createdAt: 'asc' }
 				});
-				if (invites.length === 0) return { denied: true } as const;
+				if (invites.length === 0) return { denied: true, reason: 'noInvite' } as const;
 				user = await transaction.user.create({
 					data: {
 						...newUser,

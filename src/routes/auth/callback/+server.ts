@@ -13,6 +13,7 @@ import { slackProfile } from '$lib/server/slack';
 import { queueOrgChannelSync, queueReviewersChannelSync } from '$lib/server/slackChannels';
 import { setMakerIdentityCookie, formTokenPattern } from '$lib/server/priorityForm';
 import { grantReauth } from '$lib/server/reauth';
+import { constantTimeEqual } from '$lib/server/constantTimeEqual';
 import { safeReturnPath, signInUser } from '$lib/server/signIn';
 
 // never the provider's legal name: it can deadname
@@ -34,7 +35,9 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
 	} catch {
 		parsed = { t: saved };
 	}
-	if (state !== parsed.t) throw redirect(303, '/login?error=state');
+	if (!constantTimeEqual(state, String(parsed.t ?? ''))) {
+		throw redirect(303, '/login?error=state');
+	}
 
 	const tokens = await exchangeCode(code);
 	const identity = await fetchIdentity(tokens.access_token);
@@ -72,7 +75,12 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
 	}
 
 	const outcome = await signInUser(identity, tokens, await slackDisplayName(identity.slackId));
-	if (outcome.denied) throw redirect(303, '/login?error=denied');
+	if (outcome.denied) {
+		throw redirect(
+			303,
+			outcome.reason === 'identityMismatch' ? '/login?error=identity' : '/login?error=denied'
+		);
+	}
 
 	if (outcome.syncChannels) queueOrgChannelSync(outcome.user.id);
 	for (const programId of outcome.joinedProgramIds) {

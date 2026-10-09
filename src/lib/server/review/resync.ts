@@ -4,20 +4,19 @@ import { requirePermission } from '$lib/server/authz';
 import { canActOnSubmission } from '$lib/server/claims';
 import { db } from '$lib/server/db';
 import { triggerReenrich } from '$lib/server/webhooks';
-import { assertAccess, assertTrack, done, lockedRefusal, refuse } from '$lib/server/review/guards';
+import { assertAccess, assertCanAct, done, lockedRefusal, refuse } from '$lib/server/review/guards';
 
 export async function resyncShip(
 	user: App.SessionUser,
 	programId: string,
 	submissionId: string
 ): Promise<ActionOutcome<{ success: true; version: number }>> {
-	assertAccess(user, programId);
+	await assertCanAct(user, programId, submissionId);
 	const ship = await db.submission.findFirst({
 		where: { id: submissionId, programId },
-		select: { id: true, title: true, track: true, status: true, enrichmentVersion: true }
+		select: { id: true, title: true, status: true, enrichmentVersion: true }
 	});
 	if (!ship) throw error(404, 'Submission not found');
-	assertTrack(user, programId, ship.track);
 	// a held ship is the one closed status that resyncs: confirming re-settles from the evidence
 	if (ship.status === 'secondpass') requirePermission(user, programId, 'SECOND_PASS');
 	else if (ship.status !== 'pending')

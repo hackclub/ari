@@ -16,6 +16,7 @@
 		background: var(--surface);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-lg);
+		overflow: clip;
 	}
 	.raised {
 		box-shadow: var(--shadow);

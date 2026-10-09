@@ -1,14 +1,8 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { validateMcpToken } from '$lib/server/mcp/auth';
+import { bearerToken, validateMcpToken } from '$lib/server/mcp/auth';
 import { dispatch } from '$lib/server/mcp/server';
 import { baseUrl } from '$lib/server/mcp/oauth';
 import { mlog, tail4 } from '$lib/server/mcp/log';
-
-function bearer(request: Request): string | null {
-	const header = request.headers.get('authorization') ?? '';
-	const match = /^Bearer\s+(.+)$/i.exec(header.trim());
-	return match ? match[1].trim() : null;
-}
 
 // points unauthenticated clients at the metadata that names the authorization server (rfc 9728)
 function wwwAuthenticate(origin: string) {
@@ -18,7 +12,7 @@ function wwwAuthenticate(origin: string) {
 }
 
 export const POST: RequestHandler = async ({ request, url }) => {
-	const rawToken = bearer(request);
+	const rawToken = bearerToken(request);
 	mlog('api', `POST /api/mcp`, {
 		bearer: tail4(rawToken),
 		ua: request.headers.get('user-agent') ?? ''

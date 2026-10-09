@@ -45,42 +45,72 @@ model User {
 /// and multiple app instances. Holds only the SHA256 of the code; consumed (and
 /// deleted) at /oauth/token, which then mints a real McpToken. Expires in minutes.
 model McpAuthCode {
-  id            String   @id @default(cuid())
-  codeHash      String   @unique
+  id            String         @id @default(cuid())
+  codeHash      String         @unique
   userId        String
-  canWrite      Boolean  @default(false)
+  clientId      String
+  /// The token pasted on the consent page; the minted token inherits its expiry and lineage.
+  parentTokenId String?
+  canWrite      Boolean        @default(false)
+  programIds    String[]       @default([])
   codeChallenge String
   redirectUri   String
   expiresAt     DateTime
-  createdAt     DateTime @default(now())
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime       @default(now())
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client        McpOauthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  parentToken   McpToken?      @relation("McpAuthCodeParent", fields: [parentTokenId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+  @@index([clientId])
+  @@index([parentTokenId])
 }
 
-/// Bearer token for the org MCP server.
+/// Dynamically registered OAuth client (RFC 7591) for the MCP connector flow.
+/// Public client, no secret: the registered redirect URIs are the only thing
+/// binding an authorization code to the client that asked for it.
+model McpOauthClient {
+  id           String        @id @default(cuid())
+  clientName   String
+  redirectUris String[]
+  createdAt    DateTime      @default(now())
+  authCodes    McpAuthCode[]
+
+  @@index([createdAt])
+}
+
+/// Bearer token for the MCP server and admin API, minted by any user for themselves.
 /// Session-free machine auth: the raw token (shown once at mint) is
-/// `ari_mcp_<base64url>`; we store only its SHA256 hash, like Session. Every
-/// request re-checks the owning user still holds MANAGE_MCP + OPERATE_ALL_PROGRAMS,
-/// so revoking either permission instantly kills their tokens.
+/// `ari_mcp_<base64url>`; we store only its SHA256 hash, like Session. A token acts
+/// as its owner with the owner's current access, re-read on every request, so it can
+/// never reach further than the owner can.
 model McpToken {
-  id         String    @id @default(cuid())
+  id            String        @id @default(cuid())
   /// SHA256 hex of the raw token; the raw value is never stored.
-  tokenHash  String    @unique
-  userId     String
+  tokenHash     String        @unique
+  userId        String
   /// Human label so an admin can tell tokens apart in the Admin → MCP list.
-  label      String
-  last4      String
-  /// Read-only by default. When true, the token may call the write tools
-  /// (add/remove members, set org permissions, dismiss flags).
-  canWrite   Boolean   @default(false)
-  createdAt  DateTime  @default(now())
-  lastUsedAt DateTime?
-  expiresAt  DateTime?
-  revokedAt  DateTime?
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label         String
+  last4         String
+  /// Read-only by default. When true, the token may call the write tools.
+  canWrite      Boolean       @default(false)
+  /// Programs the token is narrowed to. Empty = every program its owner can reach;
+  /// a narrowed token also cannot use org-wide tools.
+  programIds    String[]      @default([])
+  createdAt     DateTime      @default(now())
+  lastUsedAt    DateTime?
+  expiresAt     DateTime?
+  revokedAt     DateTime?
+  /// Set on tokens minted through /oauth/token: the token pasted on the consent
+  /// page. Revoking a parent revokes everything derived from it.
+  parentTokenId String?
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentToken   McpToken?     @relation("McpTokenLineage", fields: [parentTokenId], references: [id], onDelete: SetNull)
+  childTokens   McpToken[]    @relation("McpTokenLineage")
+  authCodes     McpAuthCode[] @relation("McpAuthCodeParent")
 
   @@index([userId])
+  @@index([parentTokenId])
 }
 
 /// Encrypted Hack Club OAuth tokens, 1:1 with User.

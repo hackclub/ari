@@ -1,5 +1,10 @@
 import { db } from '$lib/server/db';
-import { hasOrgPermission } from '$lib/server/authz';
+import {
+	effectiveProgramPermissions,
+	hasOrgPermission,
+	trackAllowed,
+	trackScope
+} from '$lib/server/authz';
 import { allPermissions, allTracks } from '$lib/data';
 import { systemUserId } from '$lib/server/systemUser';
 import { queueOrgChannelSync, queueReviewersChannelSync } from '$lib/server/slackChannels';
@@ -63,6 +68,9 @@ async function applyAccess(
 
 	const user = await db.user.findUnique({ where: { email } });
 	if (!user) return refuse(404, 'No such user.');
+	if (user.id === actor.id && !hasOrgPermission(actor, 'OPERATE_ALL_PROGRAMS')) {
+		return refuse(403, "You can't change your own access.");
+	}
 	const existing = await db.membership.findUnique({
 		where: { userId_programId: { userId: user.id, programId } },
 		select: { tracks: true, permissions: true, isPoc: true }
@@ -70,6 +78,19 @@ async function applyAccess(
 	if (!existing) return refuse(404, 'Not a member of this program.');
 	if (existing.isPoc && !hasOrgPermission(actor, 'OPERATE_ALL_PROGRAMS')) {
 		return refuse(403, 'Only an org operator can edit the program POC.');
+	}
+	// revoking is unrestricted: taking a permission or a track away is not an escalation
+	const held = effectiveProgramPermissions(actor, programId);
+	const addedPermissions = (change.permissions ?? []).filter(
+		(permission) => !existing.permissions.includes(permission)
+	);
+	if (addedPermissions.some((permission) => !held.includes(permission))) {
+		return refuse(403, 'You can only grant permissions you hold yourself.');
+	}
+	const scope = trackScope(actor, programId);
+	const addedTracks = (change.tracks ?? []).filter((track) => !existing.tracks.includes(track));
+	if (addedTracks.some((track) => !trackAllowed(scope, track))) {
+		return refuse(403, 'You can only assign tracks inside your own track scope.');
 	}
 
 	const tracks =
@@ -154,7 +175,9 @@ export async function removeMember(
 		if (count > 0) await logMember(programId, actor.id, 'removed', email);
 		return { ok: true };
 	}
-	if (user.id === actor.id) return refuse(400, "You can't remove yourself from the program.");
+	if (user.id === actor.id && !hasOrgPermission(actor, 'OPERATE_ALL_PROGRAMS')) {
+		return refuse(400, "You can't remove yourself from the program.");
+	}
 	if (user.id === systemUserId) return refuse(400, "The system account can't be removed.");
 	const existing = await db.membership.findUnique({
 		where: { userId_programId: { userId: user.id, programId } },

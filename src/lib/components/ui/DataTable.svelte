@@ -110,7 +110,7 @@
 
 <!-- eslint-disable svelte/no-inline-styles -- the one place column tracks and the scroll height are data-driven -->
 <div
-	class={['scroller', flush && 'flush']}
+	class={['scroller', flush && 'flush', maxHeight && 'limited']}
 	style:max-height={maxHeight}
 	style:--columns-wide={templateFor([])}
 	style:--columns-below-lg={templateFor(['lg'])}
@@ -198,11 +198,16 @@
 	.scroller {
 		container-type: inline-size;
 		overflow: auto;
-		overscroll-behavior: contain;
+		overscroll-behavior-x: contain;
+		overscroll-behavior-y: auto;
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		background: var(--surface);
 		box-shadow: var(--shadow-sm);
+	}
+	/* only a capped table scrolls inward, so only it contains vertical scroll */
+	.limited {
+		overscroll-behavior-y: contain;
 	}
 	.flush {
 		border: 0;

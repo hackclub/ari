@@ -53,8 +53,9 @@
 		{/if}
 	</div>
 	{#snippet footer()}
-		<Button variant="quiet" href="/auth/logout" icon="logout" data-sveltekit-reload>Sign out</Button
-		>
+		<form method="post" action="/auth/logout" class="signOut">
+			<Button variant="quiet" type="submit" icon="logout">Sign out</Button>
+		</form>
 		{#if data.signUrl}
 			<Button
 				variant="soft"
@@ -74,6 +75,9 @@
 </Dialog>
 
 <style>
+	.signOut {
+		display: contents;
+	}
 	.ndaPage {
 		position: relative;
 		min-height: 100vh;

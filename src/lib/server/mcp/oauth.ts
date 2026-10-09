@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
+import { constantTimeEqual } from '$lib/server/constantTimeEqual';
 import { mlog, tail4 } from '$lib/server/mcp/log';
 
 const sha256Hex = (value: string) => createHash('sha256').update(value).digest('hex');
@@ -11,9 +12,43 @@ export function baseUrl(fallbackOrigin: string): string {
 	return configured || fallbackOrigin;
 }
 
+// absolute https, or plain http only for a loopback host. no credentials, no fragment
+export function validRedirectUri(raw: unknown): raw is string {
+	if (typeof raw !== 'string' || !raw) return false;
+	let parsed: URL;
+	try {
+		parsed = new URL(raw);
+	} catch {
+		return false;
+	}
+	if (parsed.username || parsed.password || parsed.hash || raw.includes('#')) return false;
+	if (parsed.protocol === 'https:') return true;
+	return (
+		parsed.protocol === 'http:' &&
+		(parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')
+	);
+}
+
+export interface OauthClient {
+	id: string;
+	clientName: string;
+	redirectUris: string[];
+}
+
+export async function findOauthClient(clientId: string): Promise<OauthClient | null> {
+	if (!clientId) return null;
+	return db.mcpOauthClient.findUnique({
+		where: { id: clientId },
+		select: { id: true, clientName: true, redirectUris: true }
+	});
+}
+
 export interface AuthCodeData {
 	userId: string;
+	clientId: string;
+	parentTokenId: string | null;
 	canWrite: boolean;
+	programIds: string[];
 	codeChallenge: string;
 	redirectUri: string;
 }
@@ -24,7 +59,10 @@ export async function issueAuthCode(data: AuthCodeData): Promise<string> {
 		data: {
 			codeHash: sha256Hex(code),
 			userId: data.userId,
+			clientId: data.clientId,
+			parentTokenId: data.parentTokenId,
 			canWrite: data.canWrite,
+			programIds: data.programIds,
 			codeChallenge: data.codeChallenge,
 			redirectUri: data.redirectUri,
 			expiresAt: new Date(Date.now() + 300000) // 5 minutes: 5 * 60 * 1000
@@ -33,6 +71,7 @@ export async function issueAuthCode(data: AuthCodeData): Promise<string> {
 	mlog('oauth', 'auth code issued', {
 		code: tail4(code),
 		userId: data.userId,
+		clientId: data.clientId,
 		canWrite: data.canWrite,
 		redirectUri: data.redirectUri,
 		hasChallenge: !!data.codeChallenge
@@ -55,7 +94,10 @@ export async function consumeAuthCode(code: string): Promise<AuthCodeData | null
 	mlog('oauth', 'consume: ok', { code: tail4(code), userId: row.userId });
 	return {
 		userId: row.userId,
+		clientId: row.clientId,
+		parentTokenId: row.parentTokenId,
 		canWrite: row.canWrite,
+		programIds: row.programIds,
 		codeChallenge: row.codeChallenge,
 		redirectUri: row.redirectUri
 	};
@@ -69,7 +111,8 @@ export function verifyPkce(verifier: string, challenge: string): boolean {
 		});
 		return false;
 	}
-	const matches = createHash('sha256').update(verifier).digest('base64url') === challenge;
+	const expected = createHash('sha256').update(verifier).digest('base64url');
+	const matches = constantTimeEqual(expected, challenge);
 	mlog('oauth', `pkce: ${matches ? 'match' : 'MISMATCH'}`);
 	return matches;
 }

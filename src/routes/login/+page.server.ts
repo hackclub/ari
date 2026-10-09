@@ -5,6 +5,7 @@ import type { PageServerLoad } from './$types';
 
 const errorMessages: Record<string, string> = {
 	denied: "You don't have access to Ari. Ask your program's point of contact for an invite.",
+	identity: 'This email is linked to a different Hack Club account.',
 	state: 'Something went wrong with your sign-in state. Please try again.'
 };
 

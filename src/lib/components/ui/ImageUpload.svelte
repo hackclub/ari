@@ -43,9 +43,12 @@
 		image = null;
 	}
 
+	// what the server stores; svg is text that can carry script, so it stays out
+	const imageTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/avif'];
+
 	function pickFile(file: File | null | undefined) {
 		if (!file) return;
-		if (!file.type.startsWith('image/')) {
+		if (!imageTypes.includes(file.type)) {
 			toast.error('That file is not an image');
 			return;
 		}
@@ -109,7 +112,7 @@
 		bind:this={fileInput}
 		class="file"
 		type="file"
-		accept="image/*"
+		accept={imageTypes.join(',')}
 		tabindex="-1"
 		aria-hidden="true"
 		onchange={(event) => {
@@ -228,6 +231,7 @@
 	}
 	.preview.wide {
 		width: 96px;
+		/* 16:9: 96 * 9 / 16 */
 		height: 54px;
 	}
 	.details {

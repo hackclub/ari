@@ -1,6 +1,7 @@
 import { marked, type Token, type Tokens } from 'marked';
 
 const safeUrlPattern = /^https?:\/\/[^\s"'<>]+$/i;
+const safeMailtoPattern = /^mailto:[^\s"'<>]+$/i;
 const imageExtensionPattern = /\.(png|jpe?g|gif|webp|avif|svg|bmp|ico)(\?\S*)?$/i;
 
 const isAllowedHost = (host: string, domain: string) =>
@@ -54,8 +55,8 @@ function blobBase(source: ReadmeSource): string | null {
 function resolveUrl(href: string, base: string | null): string | null {
 	const raw = href.trim();
 	if (!raw) return null;
-	if (/^(mailto|https?):/i.test(raw))
-		return safeUrlPattern.test(raw) || raw.startsWith('mailto:') ? raw : null;
+	if (/^mailto:/i.test(raw)) return safeMailtoPattern.test(raw) ? raw : null;
+	if (/^https?:/i.test(raw)) return safeUrlPattern.test(raw) ? raw : null;
 	if (raw.startsWith('#') || raw.startsWith('//') || raw.includes(':')) return null;
 	if (!base) return null;
 	try {
@@ -100,14 +101,14 @@ export function renderReadme(markdown: string, source: ReadmeSource): string {
 				const href = resolveUrl(linkToken.href, linkBase);
 				const body = inline(linkToken.tokens, linkToken.text);
 				return href
-					? `<a href="${href}" target="_blank" rel="noreferrer noopener">${body}</a>`
+					? `<a href="${escapeHtml(href)}" target="_blank" rel="noreferrer noopener">${body}</a>`
 					: body;
 			}
 			case 'image': {
 				const image = token as Tokens.Image;
 				const url = resolveUrl(image.href, imageBase);
 				if (!url) return escapeHtml(image.text ?? '');
-				return `<img src="${url}" alt="${escapeHtml(image.text ?? '')}" loading="lazy" referrerpolicy="no-referrer" />`;
+				return `<img src="${escapeHtml(url)}" alt="${escapeHtml(image.text ?? '')}" loading="lazy" referrerpolicy="no-referrer" />`;
 			}
 			case 'html':
 				return htmlFallback((token as Tokens.HTML).raw);
@@ -124,7 +125,7 @@ export function renderReadme(markdown: string, source: ReadmeSource): string {
 		for (const match of images) {
 			const url = resolveUrl(match[1], imageBase);
 			if (url && (imageExtensionPattern.test(url) || /badge|shields\.io|img\.shields/i.test(url)))
-				html += `<img src="${url}" alt="" loading="lazy" referrerpolicy="no-referrer" />`;
+				html += `<img src="${escapeHtml(url)}" alt="" loading="lazy" referrerpolicy="no-referrer" />`;
 		}
 		if (/<br\s*\/?>/i.test(raw)) html += '<br />';
 		return html;
@@ -136,6 +137,7 @@ export function renderReadme(markdown: string, source: ReadmeSource): string {
 				return '';
 			case 'heading': {
 				const heading = token as Tokens.Heading;
+				// shifted down one level so the readme's h1 sits under the page title, html stops at h6
 				const level = Math.min(6, Math.max(1, heading.depth + 1));
 				return `<h${level}>${inline(heading.tokens, heading.text)}</h${level}>`;
 			}
@@ -175,8 +177,12 @@ export function renderReadme(markdown: string, source: ReadmeSource): string {
 			}
 			case 'table': {
 				const table = token as Tokens.Table;
-				const align = (column: number) =>
-					table.align?.[column] ? ` style="text-align:${table.align[column]}"` : '';
+				const align = (column: number) => {
+					const value = table.align?.[column];
+					return value === 'left' || value === 'center' || value === 'right'
+						? ` style="text-align:${value}"`
+						: '';
+				};
 				const head = table.header
 					.map((cell, column) => `<th${align(column)}>${inline(cell.tokens, cell.text)}</th>`)
 					.join('');

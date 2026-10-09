@@ -1,11 +1,23 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { db } from '$lib/server/db';
 import { reviewFixtures } from '$lib/server/review/reviewTestFixtures';
+import { GET as searchEndpoint } from '../../routes/p/[program]/search/+server';
 import { matchedDetail, searchShipCandidates, searchWords } from './shipSearch';
 
 const fixtures = reviewFixtures('shipSearch');
 const { programId, prefix } = fixtures;
 const ids = { first: '', second: '', shared: '', other: '' };
+let member: App.SessionUser;
+let rosterViewer: App.SessionUser;
+
+const searchAs = async (user: App.SessionUser, query: string) => {
+	const response = await searchEndpoint({
+		url: new URL(`http://localhost/p/${programId}/search?q=${encodeURIComponent(query)}`),
+		params: { program: programId },
+		locals: { user, sessionId: null }
+	} as never);
+	return (await response.json()) as { subs: { id: string }[]; people: { email: string }[] };
+};
 const found = async (query: string) =>
 	(await searchShipCandidates(programId, query)).map((candidate) => candidate.id);
 const written = async (query: string) =>
@@ -15,6 +27,8 @@ const written = async (query: string) =>
 
 beforeAll(async () => {
 	await fixtures.setup();
+	member = await fixtures.user('Member');
+	rosterViewer = await fixtures.user('RosterViewer', { permissions: ['VIEW_REVIEWERS'] });
 	ids.first = (await fixtures.ship('Lantern', { makerEmail: `${prefix}maker1@example.com` })).id;
 	ids.second = (await fixtures.ship('Compass')).id;
 	ids.shared = (await fixtures.ship('Harbor', { collaborative: true })).id;
@@ -91,6 +105,15 @@ describe('ship search', () => {
 			'example.com/project1',
 			'maker1'
 		]);
+	});
+
+	test('the endpoint lists members only to whoever may see the roster', async () => {
+		const plain = await searchAs(member, 'RosterViewer');
+		expect(plain.people).toEqual([]);
+		const roster = await searchAs(rosterViewer, 'RosterViewer');
+		expect(roster.people.map((person) => person.email)).toEqual([rosterViewer.email]);
+		// ships are listed either way
+		expect((await searchAs(member, 'Lantern')).subs.map((ship) => ship.id)).toContain(ids.first);
 	});
 
 	test('the detail is the field the words hit best', () => {

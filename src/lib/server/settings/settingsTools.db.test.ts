@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, expect, test } from 'bun:test';
+import { createHmac } from 'node:crypto';
 import { db } from '$lib/server/db';
 import { loadSettings } from './load';
 import {
@@ -253,4 +254,52 @@ test('a test event is queued with the sentinel ship id and the stored destinatio
 	const payload = JSON.parse(deliveries[0].payload ?? '{}');
 	expect(payload).toMatchObject({ event: 'review.approved', id: 'TEST-0000', priority: true });
 	expect(payload.collaborators).toHaveLength(1);
+});
+
+test('a test event never goes to a private destination', async () => {
+	await db.outboundEndpoint.update({
+		where: { programId },
+		data: { url: 'http://169.254.169.254/latest' }
+	});
+	try {
+		expect(await sendTestOutbound(programId)).toMatchObject({ ok: false, status: 400 });
+		expect(await db.outboundDelivery.count({ where: { programId } })).toBe(1);
+	} finally {
+		await db.outboundEndpoint.update({ where: { programId }, data: { url: destination } });
+	}
+});
+
+test('a test ping carries a timestamp and signs timestamp.body with the active secret', async () => {
+	const rolled = await rollIngestSecret(programId, organizer.id);
+	if (!rolled.ok) throw new Error('roll failed');
+	const savedUrl = process.env.WEBHOOKS_URL;
+	const realFetch = globalThis.fetch;
+	let sent: { url: string; headers: Record<string, string>; body: string } | null = null;
+	process.env.WEBHOOKS_URL = 'http://webhooks.test/';
+	globalThis.fetch = (async (input: string, init: RequestInit) => {
+		sent = {
+			url: input,
+			headers: init.headers as Record<string, string>,
+			body: init.body as string
+		};
+		return new Response('{}', { status: 200 });
+	}) as unknown as typeof fetch;
+	try {
+		expect(await sendTestPing(programId)).toEqual({ ok: true });
+	} finally {
+		globalThis.fetch = realFetch;
+		if (savedUrl === undefined) delete process.env.WEBHOOKS_URL;
+		else process.env.WEBHOOKS_URL = savedUrl;
+	}
+	if (!sent) throw new Error('nothing was sent');
+	const request = sent as { url: string; headers: Record<string, string>; body: string };
+	expect(request.url).toBe(`http://webhooks.test/api/ingest/${programId}`);
+	const timestamp = request.headers['x-ari-timestamp'];
+	expect(timestamp).toMatch(/^\d+$/);
+	// 300: the window ari-webhooks accepts, in seconds
+	expect(Math.abs(Number(timestamp) - Math.floor(Date.now() / 1000))).toBeLessThan(300);
+	expect(request.headers['x-ari-signature']).toBe(
+		createHmac('sha256', rolled.plaintext).update(`${timestamp}.${request.body}`).digest('hex')
+	);
+	expect(JSON.parse(request.body)).toMatchObject({ external_id: 'test-ping' });
 });

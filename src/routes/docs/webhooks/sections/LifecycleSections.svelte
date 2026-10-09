@@ -20,8 +20,9 @@
 	</p>
 	<Endpoint method="POST" {baseUrl} {programId} suffix="/withdraw" />
 	<p class="docProse">
-		The request is signed exactly like an ingest request: an HMAC-SHA256 of the raw body with the
-		same signing secret. The body just needs the
+		The request is signed exactly like an ingest request: an <code>X-Ari-Timestamp</code> header and
+		an HMAC-SHA256 of <code>timestamp.body</code> with the same signing secret (or, in the legacy
+		form, of the raw body alone with no timestamp header). The body just needs the
 		<code>external_id</code> you sent when you ingested the ship. Ari uses it to find the open ship for
 		that project and take it off the queue.
 	</p>

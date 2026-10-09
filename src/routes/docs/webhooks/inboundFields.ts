@@ -192,7 +192,7 @@ export const inboundFields: DocField[] = [
 		name: 'hackatime_projects',
 		type: 'string[]',
 		description:
-			'The exact Hackatime project keys for this ship. They scope the verified time and timelapses Ari pulls. A ship needs at least one of `hackatime_projects`, `journals`, or program-added time (`program_seconds`/`program_minutes`/`program_hours`). Programs that track hours themselves can skip Hackatime entirely and send program-added time alone. 422 only when all three are missing (field `hackatime_projects_or_journals_or_program_hours`). The placeholder `<<LAST_PROJECT>>` is accepted but never stored, and when it is the only project on the ship, Ari automatically requests changes so the maker can pick a real one.'
+			'The exact Hackatime project keys for this ship, up to 50 (more returns 422, field `hackatime_projects`). They scope the verified time and timelapses Ari pulls. A ship needs at least one of `hackatime_projects`, `journals`, or program-added time (`program_seconds`/`program_minutes`/`program_hours`). Programs that track hours themselves can skip Hackatime entirely and send program-added time alone. 422 only when all three are missing (field `hackatime_projects_or_journals_or_program_hours`). The placeholder `<<LAST_PROJECT>>` is accepted but never stored, and when it is the only project on the ship, Ari automatically requests changes so the maker can pick a real one.'
 	},
 	{
 		name: 'evidence',

@@ -1,21 +1,29 @@
 export const curlSample = (
 	endpoint: string
-) => `# Sign the raw body with your signing secret (ARI_SECRET=whsec_… from Settings → Webhooks)
-SIGNATURE=$(openssl dgst -sha256 -hmac "$ARI_SECRET" -binary ship.json | xxd -p -c 256)
+) => `# Sign "<timestamp>.<raw body>" with your signing secret (ARI_SECRET=whsec_… from Settings → Webhooks)
+TIMESTAMP=$(date +%s)
+SIGNATURE=$( { printf '%s.' "$TIMESTAMP"; cat ship.json; } \\
+  | openssl dgst -sha256 -hmac "$ARI_SECRET" -binary | xxd -p -c 256)
 
 curl -X POST ${endpoint} \\
   -H "Content-Type: application/json" \\
+  -H "X-Ari-Timestamp: $TIMESTAMP" \\
   -H "X-Ari-Signature: $SIGNATURE" \\
   --data-binary @ship.json`;
 
+export const legacyCurlSample = `# Legacy, body only: HMAC-SHA256 of the raw body, no timestamp header
+SIGNATURE=$(openssl dgst -sha256 -hmac "$ARI_SECRET" -binary ship.json | xxd -p -c 256)`;
+
 export const withdrawSample = (
 	endpoint: string
-) => `# Signed exactly like ingest: HMAC-SHA256 of the raw body with your secret
-SIGNATURE=$(printf '{"external_id":"site-9f2a"}' \\
+) => `# Signed exactly like ingest: HMAC-SHA256 of "<timestamp>.<raw body>" with your secret
+TIMESTAMP=$(date +%s)
+SIGNATURE=$(printf '%s.{"external_id":"site-9f2a"}' "$TIMESTAMP" \\
   | openssl dgst -sha256 -hmac "$ARI_SECRET" -binary | xxd -p -c 256)
 
 curl -X POST ${endpoint}/withdraw \\
   -H "Content-Type: application/json" \\
+  -H "X-Ari-Timestamp: $TIMESTAMP" \\
   -H "X-Ari-Signature: $SIGNATURE" \\
   -d '{"external_id":"site-9f2a"}'`;
 

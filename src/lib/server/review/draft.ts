@@ -3,10 +3,10 @@ import { draftFromUnknown } from '$lib/review/decisionForm';
 import type { Adjustments } from '$lib/review/settlement';
 import type { DecisionDraft, FieldValue } from '$lib/review/reviewTypes';
 import { toLegacyMinutes } from '$lib/time';
-import { canReviewProgram, trackAllowed, trackScope } from '$lib/server/authz';
 import { canActOnSubmission } from '$lib/server/claims';
 import { db } from '$lib/server/db';
 import { draftColumns } from '$lib/server/settlementStore';
+import { assertCanAct } from '$lib/server/review/guards';
 import { storedTimeRequest } from '$lib/server/review/heldReview';
 
 const plainObject = (value: unknown): Record<string, unknown> =>
@@ -56,7 +56,7 @@ function secondsAreCurrent(row: Draft): boolean {
 
 export function draftFromRow(row: Draft): DecisionDraft {
 	const time = storedTimeRequest({
-		settlementVersion: secondsAreCurrent(row) ? 3 : 2,
+		settlementVersion: secondsAreCurrent(row) ? 3 : 2, // 3 reads the seconds columns, 2 the minutes
 		adjustments: row.adjustments,
 		deflateMinutes: row.deflateMinutes,
 		collaboratorDeflates: row.collaboratorDeflates,
@@ -91,23 +91,23 @@ export async function saveDraft(
 	body: unknown
 ): Promise<DraftSaveResult> {
 	if (!user) return { ok: false, status: 401, error: 'unauthorized' };
-	const ship = await db.submission.findFirst({
-		where: { id: submissionId, programId },
-		select: { id: true, programId: true, track: true }
-	});
-	if (!ship) return { ok: false, status: 404, error: 'not_found' };
-	if (!canReviewProgram(user, ship.programId))
-		return { ok: false, status: 403, error: 'forbidden' };
-	if (!trackAllowed(trackScope(user, ship.programId), ship.track))
-		return { ok: false, status: 403, error: 'forbidden' };
+	// the gate throws like a page would; the endpoint answers json, so its status is carried over
+	try {
+		await assertCanAct(user, programId, submissionId);
+	} catch (caught) {
+		const status = (caught as { status?: number }).status;
+		if (status === 404) return { ok: false, status, error: 'not_found' };
+		if (status === 403) return { ok: false, status, error: 'forbidden' };
+		throw caught;
+	}
 	// only the claim holder builds a decision on an open ship
-	if (!(await canActOnSubmission(ship.id, user.id)))
+	if (!(await canActOnSubmission(submissionId, user.id)))
 		return { ok: false, status: 409, error: 'locked' };
 
 	const draft = draftFromUnknown(body);
 	const collaboratorNotes: Record<string, string> = {};
 	for (const [makerId, text] of Object.entries(draft.collaboratorNotes)) {
-		if (text.trim()) collaboratorNotes[makerId] = text.slice(0, 10000); // 10,000 characters per person
+		if (text.trim()) collaboratorNotes[makerId] = text.slice(0, 10000); // 10,000 characters each
 	}
 	const data = {
 		note: draft.note,
@@ -126,8 +126,8 @@ export async function saveDraft(
 		fixChecks: draft.fixChecks
 	};
 	await db.draft.upsert({
-		where: { submissionId_reviewerId: { submissionId: ship.id, reviewerId: user.id } },
-		create: { submissionId: ship.id, reviewerId: user.id, ...data },
+		where: { submissionId_reviewerId: { submissionId, reviewerId: user.id } },
+		create: { submissionId, reviewerId: user.id, ...data },
 		update: data
 	});
 	return { ok: true };

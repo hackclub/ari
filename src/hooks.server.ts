@@ -19,11 +19,14 @@ Sentry.init({
 // public without a session. new /api routes are private by default; /priority is gated by
 // its unguessable path token, never a reviewer session
 const isMcpApiPath = (path: string) => /^\/api\/mcp\/?$/.test(path);
+const isAdminApiPath = (path: string) => /^\/api\/admin\/tools\/[a-z_]+$/.test(path);
 const publicPaths = [
 	/^\/login$/,
 	/^\/auth\//,
 	/^\/api\/avatar\/[^/]+\/?$/,
 	/^\/api\/mcp\/?$/,
+	/^\/api\/admin\/tools\/[a-z_]+$/,
+	/^\/api\/openapi\.json$/,
 	/^\/oauth\//,
 	/^\/priority\//
 ];
@@ -64,19 +67,25 @@ const isMcpPath = (path: string) =>
 	path.startsWith('/oauth/') || isMcpApiPath(path) || path.startsWith('/.well-known/');
 
 // sveltekit's origin check is off (svelte.config.js), so same-origin is re-applied here for the
-// cookie surface. only the bearer mcp api and /oauth are exempt: no ambient credential to abuse
-const formContentTypes = ['application/x-www-form-urlencoded', 'multipart/form-data', 'text/plain'];
+// cookie surface. every unsafe method must carry a matching origin, whatever the content type:
+// a blob body without one still reaches json endpoints. only the bearer mcp and admin apis and
+// /oauth are exempt: no ambient credential to abuse
 const unsafeMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
-const isCsrfExempt = (path: string) => isMcpApiPath(path) || path.startsWith('/oauth/');
-function isCrossSiteFormPost(event: { request: Request; url: URL }): boolean {
+const isCsrfExempt = (path: string) =>
+	isMcpApiPath(path) || isAdminApiPath(path) || path.startsWith('/oauth/');
+function isCrossSiteWrite(event: { request: Request; url: URL }): boolean {
 	if (!unsafeMethods.includes(event.request.method)) return false;
-	const contentType = (event.request.headers.get('content-type') ?? '')
-		.split(';')[0]
-		.trim()
-		.toLowerCase();
-	if (!formContentTypes.includes(contentType)) return false;
 	return event.request.headers.get('origin') !== event.url.origin;
 }
+
+// csp is set by sveltekit (svelte.config.js); these ride on every response that leaves resolve
+const securityHeaders: Handle = async ({ event, resolve }) => {
+	const response = await resolve(event);
+	response.headers.set('x-content-type-options', 'nosniff');
+	response.headers.set('referrer-policy', 'strict-origin-when-cross-origin');
+	response.headers.set('x-frame-options', 'DENY');
+	return response;
+};
 
 const appHandle: Handle = async ({ event, resolve }) => {
 	const path = event.url.pathname;
@@ -84,8 +93,8 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	// logged before routing, to tell a request that never arrived from one a handler rejected
 	if (isMcpPath(path)) {
 		mlog('req', `${event.request.method} ${path}`, {
-			ua: event.request.headers.get('user-agent') ?? '',
-			ct: event.request.headers.get('content-type') ?? ''
+			userAgent: event.request.headers.get('user-agent') ?? '',
+			contentType: event.request.headers.get('content-type') ?? ''
 		});
 	}
 
@@ -93,12 +102,12 @@ const appHandle: Handle = async ({ event, resolve }) => {
 		return new Response(null, { status: 204, headers: corsHeaders });
 	}
 
-	if (!isCsrfExempt(path) && isCrossSiteFormPost(event)) {
-		mlog('csrf', 'blocked cross-site form POST', {
+	if (!isCsrfExempt(path) && isCrossSiteWrite(event)) {
+		mlog('csrf', `blocked cross-site ${event.request.method}`, {
 			path,
 			origin: event.request.headers.get('origin') ?? '(none)'
 		});
-		return new Response('Cross-site POST form submissions are forbidden', { status: 403 });
+		return new Response('Cross-site requests are forbidden', { status: 403 });
 	}
 
 	// served from hooks so the dotted .well-known path never depends on route-tree dotfile handling
@@ -157,5 +166,5 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	return response;
 };
 
-export const handle = sequence(Sentry.sentryHandle(), appHandle);
+export const handle = sequence(Sentry.sentryHandle(), securityHeaders, appHandle);
 export const handleError = Sentry.handleErrorWithSentry();

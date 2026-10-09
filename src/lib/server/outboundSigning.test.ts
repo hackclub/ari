@@ -26,19 +26,48 @@ describe('delivery signature', () => {
 });
 
 test('outbound url guard', () => {
-	for (const allowed of ['https://example.com/hook', 'http://8.8.8.8/hook']) {
+	for (const allowed of [
+		'https://example.com/hook',
+		'https://example.com./hook',
+		'http://8.8.8.8/hook',
+		'http://100.63.255.255/',
+		'http://100.128.0.1/',
+		'http://198.17.0.1/',
+		'http://198.20.0.1/',
+		'http://223.255.255.255/',
+		'https://hooks.localhost.example.com/',
+		'https://internal.example.com/',
+		'https://corp.example.com/'
+	]) {
 		expect(isSafeOutboundUrl(allowed)).toBe(true);
 	}
 	for (const blocked of [
 		'ftp://example.com',
 		'not a url',
 		'http://localhost:3000',
+		'http://localhost.:3000',
 		'http://app.localhost',
+		'http://app.localhost.',
 		'http://127.0.0.1',
 		'http://10.1.2.3',
 		'http://172.16.0.1',
 		'http://192.168.1.1',
 		'http://169.254.169.254/latest',
+		'http://100.64.0.1/',
+		'http://100.127.255.255/',
+		'http://198.18.0.1/',
+		'http://198.19.255.255/',
+		'http://224.0.0.1/',
+		'http://239.255.255.255/',
+		'http://240.0.0.1/',
+		'http://255.255.255.255/',
+		'http://printer.local/',
+		'http://db.internal/',
+		'http://wiki.intranet/',
+		'http://files.corp/',
+		'http://nas.lan/',
+		'http://router.home.arpa/',
+		'http://nas.LAN./',
 		'http://[::1]/',
 		'http://[fd00::1]/',
 		'http://[fe80::1]/',

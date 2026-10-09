@@ -3,14 +3,7 @@ import type { ShipRef, ShipWarning, Viewer } from '$lib/privateApi';
 import type { ActionOutcome, LiveChecks, ReviewWarning } from '$lib/review/reviewTypes';
 import { canActOnSubmission } from '$lib/server/claims';
 import { db } from '$lib/server/db';
-import {
-	assertAccess,
-	assertTrack,
-	done,
-	lockedRefusal,
-	refuse,
-	viewerOf
-} from '$lib/server/review/guards';
+import { assertCanAct, done, lockedRefusal, refuse, viewerOf } from '$lib/server/review/guards';
 
 function matchedRows(matched: unknown): { key: string; value: string }[] {
 	if (!Array.isArray(matched)) return [];
@@ -73,13 +66,10 @@ export async function dismissWarning(
 ): Promise<ActionOutcome<{ ok: true }>> {
 	const warningId = String(form.get('warningId') ?? form.get('flagId') ?? '');
 	if (!warningId) return refuse(400, 'invalid', 'Missing flag id.');
-	const ship = await db.submission.findFirst({
-		where: { id: submissionId, programId },
-		select: { track: true }
-	});
-	if (!ship) return refuse(404, 'notFound', 'Flag not found.');
-	assertAccess(user, programId);
-	assertTrack(user, programId, ship.track);
+	// the gate already asks SECOND_PASS of a held ship, so only the open statuses remain
+	const ship = await assertCanAct(user, programId, submissionId);
+	if (ship.status !== 'pending' && ship.status !== 'secondpass')
+		return refuse(409, 'shipClosed', 'Only a ship in review can have a flag dismissed.');
 	if (!(await canActOnSubmission(submissionId, user.id))) return lockedRefusal();
 	const dismissed = await privateProvider.dismissWarning(warningId, viewerOf(user, programId), {
 		submissionId,

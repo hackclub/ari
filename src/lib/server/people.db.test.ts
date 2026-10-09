@@ -26,8 +26,10 @@ function actorWith(name: string, orgPermissions: OrgPermission[]): App.SessionUs
 const admin = actorWith('admin', allOrgPermissions);
 const granter = actorWith('granter', ['GRANT_ORG_PERMS', 'VIEW_WEBHOOK_LOGS']);
 const manager = actorWith('manager', ['MANAGE_PEOPLE']);
+const programManager = actorWith('programManager', ['MANAGE_PEOPLE', 'MANAGE_PROGRAMS']);
 const outsider = actorWith('outsider', []);
 const targetId = `${prefix}target`;
+const holderId = `${prefix}holder`;
 
 const orgPermissionsOf = async (id: string) =>
 	(await db.user.findUniqueOrThrow({ where: { id }, select: { orgPermissions: true } }))
@@ -39,7 +41,7 @@ const invitesFor = (email: string) =>
 beforeAll(async () => {
 	await db.user.createMany({
 		data: [
-			...[admin, granter, manager, outsider].map((actor) => ({
+			...[admin, granter, manager, programManager, outsider].map((actor) => ({
 				id: actor.id,
 				email: actor.email,
 				name: actor.name,
@@ -47,7 +49,14 @@ beforeAll(async () => {
 				orgPermissions: actor.orgPermissions
 			})),
 			// stored with the identity provider's casing, looked up lowercased
-			{ id: targetId, email: emailFor('Target'), name: 'Target', avatarColor: '#338eda' }
+			{ id: targetId, email: emailFor('Target'), name: 'Target', avatarColor: '#338eda' },
+			{
+				id: holderId,
+				email: emailFor('holder'),
+				name: 'Holder',
+				avatarColor: '#338eda',
+				orgPermissions: ['VIEW_WEBHOOK_LOGS' as const]
+			}
 		]
 	});
 	await db.program.create({ data: { id: programId, name: programName, color: '#338eda' } });
@@ -284,7 +293,9 @@ test('removing a user deletes their sessions, memberships and invites and logs i
 	await db.invite.create({ data: { email: emailFor('target') } });
 	expect(await db.membership.count({ where: { userId: targetId } })).toBe(1);
 
-	expect(await removePerson(manager, emailFor('TARGET'))).toEqual({ ok: true });
+	// the target was granted an org permission above, so the plain manager no longer qualifies
+	expect(await removePerson(manager, emailFor('TARGET'))).toMatchObject({ status: 403 });
+	expect(await removePerson(admin, emailFor('TARGET'))).toEqual({ ok: true });
 
 	expect(await db.user.count({ where: { id: targetId } })).toBe(0);
 	expect(await db.session.count({ where: { userId: targetId } })).toBe(0);
@@ -296,7 +307,7 @@ test('removing a user deletes their sessions, memberships and invites and logs i
 	expect(events).toHaveLength(1);
 	expect(events[0]).toMatchObject({
 		kind: 'MEMBER',
-		actorId: manager.id,
+		actorId: admin.id,
 		meta: { op: 'removed', email: emailFor('target'), role: 'Reviewer' }
 	});
 });
@@ -305,4 +316,49 @@ test('removing an email with only a pending invite revokes the invite', async ()
 	expect(await invitesFor(emailFor('new'))).toHaveLength(2);
 	expect(await removePerson(manager, emailFor('new'))).toEqual({ ok: true });
 	expect(await invitesFor(emailFor('new'))).toEqual([]);
+});
+
+test('an invite never seats the inviter on a program, unless they run programs', async () => {
+	const input = {
+		emails: [manager.email],
+		role: 'Organizer',
+		orgPermissions: [],
+		programs: [programName]
+	};
+	expect(await invitePeople(manager, input)).toEqual({ ok: true, invited: 1 });
+	expect(await db.membership.count({ where: { userId: manager.id, programId } })).toBe(0);
+	expect(await invitesFor(manager.email)).toEqual([]);
+
+	expect(await invitePeople(programManager, { ...input, emails: [programManager.email] })).toEqual({
+		ok: true,
+		invited: 1
+	});
+	expect(await db.membership.count({ where: { userId: programManager.id, programId } })).toBe(1);
+});
+
+test('removing someone who holds org permissions takes the granting tier', async () => {
+	expect(await removePerson(manager, emailFor('holder'))).toEqual({
+		ok: false,
+		status: 403,
+		error: 'You do not have permission to remove people who hold org permissions.'
+	});
+	const grantsOthers = actorWith('grantsOthers', [
+		'MANAGE_PEOPLE',
+		'GRANT_ORG_PERMS',
+		'MANAGE_MCP'
+	]);
+	expect(await removePerson(grantsOthers, emailFor('holder'))).toEqual({
+		ok: false,
+		status: 403,
+		error: 'You can only remove people whose org permissions you hold yourself.'
+	});
+	expect(await db.user.count({ where: { id: holderId } })).toBe(1);
+
+	const grantsLogs = actorWith('grantsLogs', [
+		'MANAGE_PEOPLE',
+		'GRANT_ORG_PERMS',
+		'VIEW_WEBHOOK_LOGS'
+	]);
+	expect(await removePerson(grantsLogs, emailFor('holder'))).toEqual({ ok: true });
+	expect(await db.user.count({ where: { id: holderId } })).toBe(0);
 });

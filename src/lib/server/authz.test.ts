@@ -4,6 +4,7 @@ import type { OrgPermission, ProgramPermission, Track } from '$db';
 import {
 	canAccessProgram,
 	canReviewProgram,
+	effectiveProgramPermissions,
 	hasAllPermissions,
 	hasOrgPermission,
 	hasPermission,
@@ -131,6 +132,20 @@ describe('hasPermission', () => {
 		);
 		expect(hasPermission(viewerMember, 'programOne', 'OVERRIDE_DECISIONS')).toBe(true);
 		expect(hasPermission(viewerMember, 'programTwo', 'OVERRIDE_DECISIONS')).toBe(false);
+	});
+});
+
+describe('effectiveProgramPermissions', () => {
+	test('folds the org tiers and the poc seat into one list per program', () => {
+		expect(effectiveProgramPermissions(plainMember, 'programOne')).toEqual([]);
+		const granted = userWith([], [membership({ permissions: ['SECOND_PASS', 'USE_VMS'] })]);
+		expect(effectiveProgramPermissions(granted, 'programOne')).toEqual(['SECOND_PASS', 'USE_VMS']);
+		expect(effectiveProgramPermissions(granted, 'programTwo')).toEqual([]);
+		expect(effectiveProgramPermissions(pocMember, 'programOne')).toEqual(allPermissions);
+		expect(effectiveProgramPermissions(orgOperator, 'anyProgram')).toEqual(allPermissions);
+		expect(effectiveProgramPermissions(orgViewer, 'anyProgram')).toEqual(
+			allPermissions.filter((permission) => orgViewProgramPermissions.includes(permission))
+		);
 	});
 });
 

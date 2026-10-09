@@ -22,7 +22,34 @@ const config = {
 		},
 		// sveltekit's origin check rejects no-origin posts like /oauth/token, so it is off here
 		// and re-applied for the cookie surface in hooks.server.ts
-		csrf: { trustedOrigins: ['*'] }
+		csrf: { trustedOrigins: ['*'] },
+		csp: {
+			mode: 'auto',
+			directives: {
+				'default-src': ['self'],
+				'script-src': ['self'],
+				// google fonts: layout.css imports the stylesheet, which pulls the font files
+				'style-src': ['self', 'unsafe-inline', 'https://fonts.googleapis.com'],
+				'font-src': ['self', 'data:', 'https://fonts.gstatic.com'],
+				'img-src': ['self', 'https:', 'data:', 'blob:'],
+				'media-src': ['self', 'https:', 'blob:'],
+				'connect-src': [
+					'self',
+					'https://*.sentry.io',
+					'https://*.ingest.sentry.io',
+					// vite's hmr socket and dev requests, never in a build
+					...(process.env.NODE_ENV !== 'production'
+						? ['ws://localhost:*', 'http://localhost:*']
+						: [])
+				],
+				'object-src': ['none'],
+				'base-uri': ['self'],
+				'frame-ancestors': ['none'],
+				'worker-src': ['self', 'blob:']
+				// no form-action: /oauth/authorize answers a form post with a 303 to the client's
+				// redirect_uri, which chrome checks against it
+			}
+		}
 	}
 };
 

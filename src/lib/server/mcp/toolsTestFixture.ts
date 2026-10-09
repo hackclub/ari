@@ -1,3 +1,4 @@
+import type { OrgPermission } from '$db';
 import { db } from '$lib/server/db';
 import { generateMcpToken, validateMcpToken, type McpContext } from './auth';
 import { mcpTools } from './tools';
@@ -14,6 +15,7 @@ export function mcpFixture(label: string) {
 	const makerEmail = `${makerId}@example.com`.toLowerCase();
 	const inviteEmail = `${prefix}invitee@example.com`.toLowerCase();
 	const receivedAt = new Date('2026-03-01T10:00:00Z');
+	const adminPermissions: OrgPermission[] = ['MANAGE_MCP', 'MANAGE_PEOPLE', 'OPERATE_ALL_PROGRAMS'];
 	const reviewedAt = new Date('2026-03-02T10:00:00Z');
 
 	async function mintToken(userId: string, canWrite: boolean, extra: object = {}): Promise<string> {
@@ -36,7 +38,7 @@ export function mcpFixture(label: string) {
 					name: 'Mcp Admin',
 					avatarColor: '#338eda',
 					slackId: `${prefix}Slack`,
-					orgPermissions: ['MANAGE_MCP', 'OPERATE_ALL_PROGRAMS']
+					orgPermissions: adminPermissions
 				},
 				{
 					id: outsiderId,
@@ -161,6 +163,7 @@ export function mcpFixture(label: string) {
 
 	return {
 		prefix,
+		adminPermissions,
 		adminId,
 		outsiderId,
 		programId,
@@ -201,11 +204,19 @@ export const readToolNames = [
 	'list_activity',
 	'submission_evidence',
 	'find_maker',
-	'reviewer_stats'
+	'reviewer_stats',
+	'get_program_settings'
 ];
 export const writeToolNames = [
 	'add_member',
 	'remove_member',
 	'set_org_permissions',
-	'requeue_submission'
+	'requeue_submission',
+	'create_program',
+	'update_program',
+	'update_program_settings',
+	'set_review_tools',
+	'upload_program_image',
+	'roll_ingest_secret',
+	'roll_outbound_secret'
 ];

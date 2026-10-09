@@ -14,6 +14,12 @@ export function generateMcpToken(): { raw: string; hash: string; last4: string }
 	return { raw, hash: sha256(raw), last4: raw.slice(-4) };
 }
 
+export function bearerToken(request: Request): string | null {
+	const header = request.headers.get('authorization') ?? '';
+	const match = /^Bearer\s+(.+)$/i.exec(header.trim());
+	return match ? match[1].trim() : null;
+}
+
 export function hashMcpToken(raw: string): string {
 	return sha256(raw);
 }
@@ -23,9 +29,11 @@ export interface McpContext {
 	tokenId: string;
 	tokenLabel: string;
 	canWrite: boolean;
+	// empty: every program the owner can reach
+	programIds: string[];
 }
 
-// owner permissions are re-checked on every call, so revoking either one kills the token
+// the owner's access is read fresh on every call, so a token never outlives a revoked permission
 export async function validateMcpToken(raw: string): Promise<McpContext | null> {
 	if (!raw.startsWith(mcpTokenPrefix)) {
 		mlog('auth', 'reject: wrong prefix', { bearer: tail4(raw) });
@@ -51,16 +59,6 @@ export async function validateMcpToken(raw: string): Promise<McpContext | null> 
 		});
 		return null;
 	}
-	if (
-		!token.user.orgPermissions.includes('MANAGE_MCP') ||
-		!token.user.orgPermissions.includes('OPERATE_ALL_PROGRAMS')
-	) {
-		mlog('auth', 'reject: owner lacks MANAGE_MCP + OPERATE_ALL_PROGRAMS', {
-			user: token.user.email,
-			orgPermissions: token.user.orgPermissions.join(',')
-		});
-		return null;
-	}
 	if (ndaEnforced() && ndaBlocks(await ndaStatus(token.user))) {
 		mlog('auth', 'reject: nda not signed', { user: token.user.email, token: token.label });
 		return null;
@@ -79,6 +77,7 @@ export async function validateMcpToken(raw: string): Promise<McpContext | null> 
 		tokenId: token.id,
 		tokenLabel: token.label,
 		canWrite: token.canWrite,
+		programIds: token.programIds,
 		user: {
 			id: user.id,
 			email: user.email,

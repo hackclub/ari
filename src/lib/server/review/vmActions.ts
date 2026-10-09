@@ -1,11 +1,10 @@
-import { error } from '@sveltejs/kit';
 import type { ActionOutcome } from '$lib/review/reviewTypes';
 import { requirePermission } from '$lib/server/authz';
 import { canActOnSubmission } from '$lib/server/claims';
 import { encrypt } from '$lib/server/crypto';
 import { db } from '$lib/server/db';
 import { createVm, deleteVm, isVmType, rdpUri, teardownVms, vmConfigured } from '$lib/server/vm';
-import { assertAccess, assertTrack, done, lockedRefusal, refuse } from '$lib/server/review/guards';
+import { assertAccess, assertCanAct, done, lockedRefusal, refuse } from '$lib/server/review/guards';
 
 export async function launchVm(
 	user: App.SessionUser,
@@ -13,34 +12,32 @@ export async function launchVm(
 	submissionId: string,
 	form: FormData
 ): Promise<ActionOutcome<{ success: true }>> {
+	// the gate runs before the platform check, so who may act never depends on configuration
+	const ship = await assertCanAct(user, programId, submissionId);
 	if (!vmConfigured()) return refuse(400, 'vmUnavailable', 'The VM platform is not configured.');
 	const type = String(form.get('type') ?? '');
 	if (!isVmType(type))
 		return refuse(400, 'invalid', 'Pick a VM type (linux, windows, or android).');
 
-	const ship = await db.submission.findFirst({
-		where: { id: submissionId, programId },
-		select: { id: true, status: true, track: true, program: { select: { allowVms: true } } }
+	const program = await db.program.findUniqueOrThrow({
+		where: { id: programId },
+		select: { allowVms: true }
 	});
-	if (!ship) throw error(404, 'Submission not found');
-	assertAccess(user, programId);
-	assertTrack(user, programId, ship.track);
-	if (!ship.program.allowVms)
+	if (!program.allowVms)
 		return refuse(403, 'vmUnavailable', 'This program has reviewer VMs turned off.');
 	requirePermission(user, programId, 'USE_VMS');
 	if (ship.track !== 'software')
 		return refuse(400, 'vmUnavailable', 'Reviewer VMs are only available for software ships.');
 	if (ship.status !== 'pending' && ship.status !== 'secondpass')
 		return refuse(400, 'shipClosed', 'This ship is already reviewed. VMs are for ships in review.');
-	if (ship.status === 'secondpass') requirePermission(user, programId, 'SECOND_PASS');
-	if (!(await canActOnSubmission(ship.id, user.id))) return lockedRefusal();
+	if (!(await canActOnSubmission(submissionId, user.id))) return lockedRefusal();
 
-	const ownVm = { submissionId_reviewerId: { submissionId: ship.id, reviewerId: user.id } };
+	const ownVm = { submissionId_reviewerId: { submissionId, reviewerId: user.id } };
 	const existing = await db.reviewerVm.findUnique({ where: ownVm, select: { vmid: true } });
 	if (existing) {
 		// the slot is freed whatever the platform says: the tombstone sweep retries the delete
 		teardownVms([existing.vmid]);
-		await db.reviewerVm.deleteMany({ where: { submissionId: ship.id, reviewerId: user.id } });
+		await db.reviewerVm.deleteMany({ where: { submissionId, reviewerId: user.id } });
 	}
 
 	// the reviewer must be the exact sign-in email: it scopes the vm to them
@@ -56,7 +53,7 @@ export async function launchVm(
 		await db.$transaction([
 			db.reviewerVm.create({
 				data: {
-					submissionId: ship.id,
+					submissionId,
 					reviewerId: user.id,
 					programId,
 					vmid: machine.vmid,
@@ -73,7 +70,7 @@ export async function launchVm(
 					programId,
 					kind: 'VM',
 					actorId: user.id,
-					submissionId: ship.id,
+					submissionId,
 					text: `Launched a ${type} VM for review`,
 					meta: { op: 'launch', type, vmid: machine.vmid, name: machine.name }
 				}
@@ -89,14 +86,15 @@ export async function launchVm(
 	return done({ success: true });
 }
 
-// keyed by the caller, so it only ever reaches a vm they own
+// keyed by the caller and the route's program, so it only ever reaches a vm they own there
 export async function stopVm(
 	user: App.SessionUser,
 	programId: string,
 	submissionId: string
 ): Promise<ActionOutcome<{ success: true }>> {
-	const row = await db.reviewerVm.findUnique({
-		where: { submissionId_reviewerId: { submissionId, reviewerId: user.id } },
+	assertAccess(user, programId);
+	const row = await db.reviewerVm.findFirst({
+		where: { submissionId, reviewerId: user.id, programId },
 		select: { vmid: true, vmType: true }
 	});
 	if (!row) return done({ success: true });

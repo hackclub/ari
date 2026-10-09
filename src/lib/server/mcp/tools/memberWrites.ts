@@ -2,10 +2,19 @@ import { db } from '$lib/server/db';
 import { systemUserId } from '$lib/server/systemUser';
 import { hasOrgPermission } from '$lib/server/authz';
 import { allOrgPermissions, allPermissions, allTracks } from '$lib/data';
-import { permSummary } from '$lib/server/members';
+import { permSummary, removeMember as removeMemberAs, setMemberAccess } from '$lib/server/members';
 import { queueOrgChannelSync, queueReviewersChannelSync } from '$lib/server/slackChannels';
 import type { OrgPermission, ProgramPermission, Track } from '$db';
-import { requireWrite, resolveProgram, type Tool } from './shared';
+import { programFor, requireOrgWide } from './access';
+import { requireWrite, unwrap, type Tool } from './shared';
+
+const memberAndInviteCount = async (programId: string, email: string) =>
+	(await db.membership.count({
+		where: { programId, user: { email: { equals: email, mode: 'insensitive' } } }
+	})) +
+	(await db.invite.count({
+		where: { programId, email: { equals: email, mode: 'insensitive' }, acceptedAt: null }
+	}));
 
 function parseTracks(input: unknown): Track[] {
 	if (!Array.isArray(input)) return ['software'];
@@ -46,7 +55,7 @@ export const addMember: Tool = {
 	write: true,
 	handler: async (args, context) => {
 		requireWrite(context);
-		const program = await resolveProgram(String(args.program));
+		const program = await programFor(context, args.program, 'MANAGE_REVIEWERS');
 		const email = String(args.email).trim().toLowerCase();
 		if (!email) throw new Error('email is required.');
 		const permissions = parsePermissions(args.permissions);
@@ -57,7 +66,7 @@ export const addMember: Tool = {
 		// invite that person can never accept
 		const existing = await db.user.findFirst({
 			where: { email: { equals: email, mode: 'insensitive' } },
-			select: { id: true }
+			select: { id: true, email: true }
 		});
 		if (existing?.id === systemUserId) throw new Error('The system account cannot join programs.');
 
@@ -67,10 +76,15 @@ export const addMember: Tool = {
 				where: membershipKey,
 				select: { id: true }
 			});
-			await db.membership.upsert({
-				where: membershipKey,
-				create: { userId: existing.id, programId: program.id, permissions, tracks },
-				update: { permissions, tracks }
+			// an existing member changes through the reviewers page path, which guards the poc
+			if (previous) {
+				unwrap(
+					await setMemberAccess(program.id, context.user, existing.email, tracks, permissions)
+				);
+				return { result: 'updated', email, program: program.id, permissions, tracks };
+			}
+			await db.membership.create({
+				data: { userId: existing.id, programId: program.id, permissions, tracks }
 			});
 			// the membership fulfils any pending invite, which could never be accepted at login
 			await db.invite.updateMany({
@@ -81,26 +95,19 @@ export const addMember: Tool = {
 				},
 				data: { acceptedAt: new Date() }
 			});
-			if (!previous) {
-				queueOrgChannelSync(existing.id);
-				queueReviewersChannelSync(program.id, existing.id, 'add');
-			}
+			queueOrgChannelSync(existing.id);
+			queueReviewersChannelSync(program.id, existing.id, 'add');
 			await db.activityEvent.create({
 				data: {
 					programId: program.id,
 					kind: 'MEMBER',
 					actorId: context.user.id,
-					text: previous ? `Set ${email} to ${summary}` : `Added ${email} with ${summary}`,
-					meta: {
-						op: previous ? 'permissions-changed' : 'added',
-						email,
-						permissions,
-						via: 'mcp'
-					}
+					text: `Added ${email} with ${summary}`,
+					meta: { op: 'added', email, permissions, via: 'mcp' }
 				}
 			});
 			return {
-				result: previous ? 'updated' : 'added',
+				result: 'added',
 				email,
 				program: program.id,
 				permissions,
@@ -153,42 +160,14 @@ export const removeMember: Tool = {
 	write: true,
 	handler: async (args, context) => {
 		requireWrite(context);
-		const program = await resolveProgram(String(args.program));
-		const email = String(args.email).trim().toLowerCase();
-		const user = await db.user.findFirst({
-			where: { email: { equals: email, mode: 'insensitive' } },
-			select: { id: true }
-		});
-		let removed = false;
-		if (user) {
-			const deletedMemberships = await db.membership.deleteMany({
-				where: { userId: user.id, programId: program.id }
-			});
-			removed = deletedMemberships.count > 0;
-			if (removed) {
-				queueReviewersChannelSync(program.id, user.id, 'remove');
-				queueOrgChannelSync(user.id);
-			}
-		}
-		const deletedInvites = await db.invite.deleteMany({
-			where: {
-				email: { equals: email, mode: 'insensitive' },
-				programId: program.id,
-				acceptedAt: null
-			}
-		});
-		if (removed || deletedInvites.count > 0) {
-			await db.activityEvent.create({
-				data: {
-					programId: program.id,
-					kind: 'MEMBER',
-					actorId: context.user.id,
-					text: `Removed ${email}`,
-					meta: { op: 'removed', email, via: 'mcp' }
-				}
-			});
-		}
-		return { removed: removed || deletedInvites.count > 0, email, program: program.id };
+		const program = await programFor(context, args.program, 'MANAGE_REVIEWERS');
+		const email = String(args.email ?? '')
+			.trim()
+			.toLowerCase();
+		const before = await memberAndInviteCount(program.id, email);
+		unwrap(await removeMemberAs(program.id, context.user, email));
+		const after = await memberAndInviteCount(program.id, email);
+		return { removed: after < before, email, program: program.id };
 	}
 };
 
@@ -214,6 +193,7 @@ export const setOrgPermissions: Tool = {
 	write: true,
 	handler: async (args, context) => {
 		requireWrite(context);
+		requireOrgWide(context);
 		if (!hasOrgPermission(context.user, 'GRANT_ORG_PERMS')) {
 			throw new Error('The token owner does not hold GRANT_ORG_PERMS.');
 		}
@@ -229,8 +209,9 @@ export const setOrgPermissions: Tool = {
 			throw new Error(`Unknown org permissions: ${unknown.join(', ')}.`);
 		}
 		const permissions = allOrgPermissions.filter((permission) => requested.includes(permission));
-		const user = await db.user.findUnique({
-			where: { email },
+		// stored emails keep the identity provider's casing
+		const user = await db.user.findFirst({
+			where: { email: { equals: email, mode: 'insensitive' } },
 			select: { id: true, orgPermissions: true }
 		});
 		if (!user) throw new Error('No account with that email has signed in yet.');

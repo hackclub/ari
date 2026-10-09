@@ -2,6 +2,7 @@ import { createHmac } from 'node:crypto';
 import { db } from '$lib/server/db';
 import { decrypt } from '$lib/server/crypto';
 import { notifyDelivery } from '$lib/server/outbound';
+import { isSafeOutboundUrl } from '$lib/server/outboundSigning';
 import { webhooksBaseUrl } from '$lib/server/webhooks';
 import { activeIngestSecret } from './secrets';
 import type { SettingsResult } from './save';
@@ -23,11 +24,19 @@ export async function sendTestPing(programId: string): Promise<SettingsResult> {
 		repo_url: 'https://example.com/test',
 		hours: 1
 	});
-	const signature = createHmac('sha256', decrypt(secret.secretEnc)).update(body).digest('hex');
+	// timestamped form: the signature covers `${timestamp}.${body}` and expires with the timestamp
+	const timestampSeconds = Math.floor(Date.now() / 1000);
+	const signature = createHmac('sha256', decrypt(secret.secretEnc))
+		.update(`${timestampSeconds}.${body}`)
+		.digest('hex');
 	try {
 		await fetch(`${baseUrl}/api/ingest/${programId}`, {
 			method: 'POST',
-			headers: { 'content-type': 'application/json', 'x-ari-signature': signature },
+			headers: {
+				'content-type': 'application/json',
+				'x-ari-timestamp': String(timestampSeconds),
+				'x-ari-signature': signature
+			},
 			body
 		});
 	} catch {
@@ -80,6 +89,12 @@ export async function sendTestOutbound(programId: string): Promise<SettingsResul
 		})
 	]);
 	if (!endpoint?.url) return refuse(400, 'Set a destination URL first.');
+	if (!isSafeOutboundUrl(endpoint.url)) {
+		return refuse(
+			400,
+			'That webhook host is not allowed. Use a public address, not localhost or a private/internal one.'
+		);
+	}
 	if (!endpoint.secretEnc) return refuse(400, 'Generate an outbound secret first.');
 	try {
 		// a row the sender can never sign would only fail later

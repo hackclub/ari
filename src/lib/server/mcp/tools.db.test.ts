@@ -230,7 +230,7 @@ describe('read tools', () => {
 		expect(admin.memberships).toEqual([
 			{ program: programId, permissions: ['VIEW_REVIEWED'], isPoc: true, tracks: ['software'] }
 		]);
-		expect(admin.orgPermissions).toEqual(['MANAGE_MCP', 'OPERATE_ALL_PROGRAMS']);
+		expect(admin.orgPermissions).toEqual(['MANAGE_MCP', 'MANAGE_PEOPLE', 'OPERATE_ALL_PROGRAMS']);
 	});
 
 	test('search_submissions', async () => {
@@ -257,9 +257,13 @@ describe('read tools', () => {
 			id: adminId,
 			name: 'Mcp Admin',
 			email: adminEmail,
-			orgPermissions: ['MANAGE_MCP', 'OPERATE_ALL_PROGRAMS'],
+			orgPermissions: ['MANAGE_MCP', 'MANAGE_PEOPLE', 'OPERATE_ALL_PROGRAMS'],
+			memberships: [
+				{ programId, permissions: ['VIEW_REVIEWED'], isPoc: true, tracks: ['software'] }
+			],
 			token: `${prefix} false`,
-			canWrite: false
+			canWrite: false,
+			programIds: []
 		});
 	});
 
@@ -395,7 +399,7 @@ describe('read tools', () => {
 				name: 'Mcp Admin',
 				email: adminEmail,
 				slackId: `${prefix}Slack`,
-				orgPermissions: ['MANAGE_MCP', 'OPERATE_ALL_PROGRAMS']
+				orgPermissions: ['MANAGE_MCP', 'MANAGE_PEOPLE', 'OPERATE_ALL_PROGRAMS']
 			},
 			scope: 'all-programs',
 			totalReviews: 1,

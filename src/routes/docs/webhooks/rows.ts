@@ -85,7 +85,8 @@ export const ingestResponses: DocRow[] = [
 		code: '401',
 		ok: false,
 		name: 'Bad signature',
-		description: 'The signature header is missing or does not match.'
+		description:
+			'The signature header is missing or does not match, or `X-Ari-Timestamp` is present but is not a whole number of unix seconds within 300 seconds of the current time.'
 	},
 	{
 		code: '404',
@@ -120,7 +121,8 @@ export const withdrawResponses: DocRow[] = [
 		code: '401',
 		ok: false,
 		name: 'Bad signature',
-		description: 'The signature header is missing or does not match.'
+		description:
+			'The signature header is missing or does not match, or `X-Ari-Timestamp` is present but is not a whole number of unix seconds within 300 seconds of the current time.'
 	},
 	{
 		code: '422',

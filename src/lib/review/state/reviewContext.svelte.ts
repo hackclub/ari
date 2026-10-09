@@ -1,5 +1,6 @@
 import { goto } from '$app/navigation';
 import { page } from '$app/state';
+import { safeReturnPath } from '$lib/returnPath';
 import { reviewHref } from '$lib/shipList';
 import { toast } from '$lib/toast.svelte';
 import type { Decision } from '$lib/review/reviewRules';
@@ -116,10 +117,7 @@ export class ReviewContext {
 	readonly advanceHref = $derived(this.nextHref ?? this.listHref);
 
 	// another screen may ask to be returned to. only same-origin paths are honoured
-	readonly returnHref = $derived.by(() => {
-		const back = page.url.searchParams.get('back');
-		return back && back.startsWith('/') && !back.startsWith('//') ? back : null;
-	});
+	readonly returnHref = $derived(safeReturnPath(page.url.searchParams.get('back'), null));
 
 	// where back and finish session go: the screen that sent the reviewer here, else the list
 	readonly leaveHref = $derived(this.returnHref ?? this.listHref);

@@ -1,13 +1,12 @@
 import { error, fail } from '@sveltejs/kit';
 import type { Track } from '$db';
-import { allPermissions } from '$lib/data';
 import type { Viewer } from '$lib/privateApi';
 import type { ReviewProblem } from '$lib/review/reviewRules';
 import type { ActionFailure, ActionOutcome, FailureCode } from '$lib/review/reviewTypes';
 import {
 	canAccessProgram,
 	canReviewProgram,
-	hasPermission,
+	effectiveProgramPermissions,
 	isSelfReview,
 	requirePermission,
 	trackAllowed,
@@ -53,7 +52,6 @@ export const refuse = (
 const conflictCodes = ['claimHeldByOther', 'shipClosed', 'notAwaitingSecondPass'];
 const forbiddenCodes = ['secondPassPermission', 'overridePermission', 'ownHeldDecision'];
 
-// a refusal names its first problem and carries them all
 export function refuseProblems(problems: ReviewProblem[]) {
 	const first = problems[0];
 	const status = conflictCodes.includes(first.code)
@@ -78,7 +76,7 @@ export const toActionResult = <Data>(outcome: ActionOutcome<Data>) =>
 
 export const viewerOf = (user: App.SessionUser, programId: string): Viewer => ({
 	userId: user.id,
-	permissions: allPermissions.filter((permission) => hasPermission(user, programId, permission))
+	permissions: effectiveProgramPermissions(user, programId)
 });
 
 export async function shipVmIds(submissionId: string): Promise<number[]> {
@@ -86,7 +84,6 @@ export async function shipVmIds(submissionId: string): Promise<number[]> {
 	return rows.map((row) => row.vmid);
 }
 
-// null when the program does not ask for it or the grant is fresh
 export async function reauthRefusal(
 	user: App.SessionUser,
 	programId: string,
@@ -128,6 +125,29 @@ export async function assertCanView(
 	});
 	if (!ship) throw error(404, 'Submission not found');
 	assertViewable(user, programId, ship, ship.program.reviewersCannotReviewOwnProjects);
+}
+
+// the write gate: the page's read gate on top of the review tier, for an action that skips
+// the load. the ship is re-read by the caller for whatever else it needs
+export async function assertCanAct(
+	user: App.SessionUser,
+	programId: string,
+	submissionId: string
+): Promise<{ track: Track; status: string }> {
+	assertAccess(user, programId);
+	const ship = await db.submission.findFirst({
+		where: { id: submissionId, programId },
+		select: {
+			track: true,
+			status: true,
+			program: { select: { reviewersCannotReviewOwnProjects: true } },
+			maker: { select: { email: true, slackId: true } },
+			collaborators: { select: { maker: { select: { email: true, slackId: true } } } }
+		}
+	});
+	if (!ship) throw error(404, 'Submission not found');
+	assertViewable(user, programId, ship, ship.program.reviewersCannotReviewOwnProjects);
+	return { track: ship.track, status: ship.status };
 }
 
 export function assertViewable(

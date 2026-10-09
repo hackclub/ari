@@ -5,10 +5,13 @@
 
 	// a failed submit carries the oauth params back, otherwise they come from the load
 	const params = $derived(form?.params ?? data.params);
+	const client = $derived(form?.client ?? data.client);
 	const errorMessage = $derived(form?.error ?? null);
 
 	const hiddenParams = [
+		'client_id',
 		'redirect_uri',
+		'response_type',
 		'state',
 		'code_challenge',
 		'code_challenge_method',
@@ -23,6 +26,15 @@
 	<div class="panel">
 		<Card>
 			<form method="POST">
+				<header class="who">
+					<h1>Connect <strong>{client.name}</strong> to ari</h1>
+					<p>
+						After you authorize, an access code is sent to
+						<strong class="host">{client.redirectHost}</strong>. Only continue if that is where you
+						started this connection.
+					</p>
+				</header>
+
 				{#if errorMessage}
 					<Notice tone="danger">{errorMessage}</Notice>
 				{/if}
@@ -65,5 +77,25 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
+	}
+	.who {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+	h1 {
+		margin: 0;
+		font-size: var(--text-lg);
+		font-weight: 700;
+	}
+	p {
+		margin: 0;
+		font-size: var(--text-sm);
+		color: var(--text-2);
+	}
+	.host {
+		font-family: var(--font-mono);
+		color: var(--text-1);
+		word-break: break-all;
 	}
 </style>

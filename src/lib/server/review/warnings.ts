@@ -49,12 +49,15 @@ export async function runLiveChecks(ship: ShipRef, viewer: Viewer): Promise<Live
 		});
 		return {
 			screened: Boolean(after) && after!.status !== 'pending',
-			warnings: fresh ? warningRows(fresh) : null
+			warnings: fresh ? warningRows(fresh) : null,
+			excluded: fresh
+				? (await privateProvider.excludedMakers(ship)).map((person) => person.makerId).sort()
+				: null
 		};
 	} catch (caught) {
 		// a failed refresh must not break the page already rendered
 		console.error(`[review] live check refresh for ${ship.submissionId} failed`, caught);
-		return { screened: false, warnings: null };
+		return { screened: false, warnings: null, excluded: null };
 	}
 }
 

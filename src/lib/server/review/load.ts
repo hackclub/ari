@@ -2,6 +2,7 @@ import { error, redirect } from '@sveltejs/kit';
 import { privateProvider } from '$private';
 import type { RuleFieldType } from '$lib/review/reviewRules';
 import type { ReviewPageData, ReviewVm } from '$lib/review/reviewTypes';
+import { settle, withoutPeople } from '$lib/review/settlement';
 import { canReviewProgram, hasAllPermissions, hasPermission } from '$lib/server/authz';
 import { isClaimStale } from '$lib/server/claims';
 import { decrypt } from '$lib/server/crypto';
@@ -125,7 +126,8 @@ export async function loadReviewPage(input: ReviewLoadInput): Promise<ReviewPage
 		pastProjects,
 		warnings,
 		privatePanels,
-		issue
+		issue,
+		excluded
 	] = await Promise.all([
 		db.program.findUniqueOrThrow({
 			where: { id: programId },
@@ -165,9 +167,12 @@ export async function loadReviewPage(input: ReviewLoadInput): Promise<ReviewPage
 		shipPastProjects(ship.id, people.knownByEmail),
 		privateProvider.shipWarnings(shipRef, viewer),
 		privateProvider.reviewPanelData(shipRef, viewer),
-		ship.evidenceSyncedAt ? null : captureIssue(ship.id)
+		ship.evidenceSyncedAt ? null : captureIssue(ship.id),
+		privateProvider.excludedMakers(shipRef)
 	]);
 
+	const evidence = evidenceFromRows(ship);
+	const captured = settle({}, evidence);
 	const recorded = recordedDecision(reviews, ship, ship, user.id);
 	const canSecondPass = hasPermission(user, programId, 'SECOND_PASS');
 	const canOverride = hasPermission(user, programId, 'OVERRIDE_DECISIONS');
@@ -198,7 +203,20 @@ export async function loadReviewPage(input: ReviewLoadInput): Promise<ReviewPage
 
 	return {
 		ship: shipSummary(ship, people, meta.color),
-		collaborators: people.collaborators.length ? people.collaborators : null,
+		collaborators: people.collaborators.length
+			? people.collaborators.map((person) => {
+					const found = excluded.find((entry) => entry.makerId === person.makerId);
+					return {
+						...person,
+						excluded: found
+							? {
+									seconds: captured.collaborators[person.makerId]?.total ?? 0,
+									reason: found.reason
+								}
+							: null
+					};
+				})
+			: null,
 		makers: people.makers,
 		authors: people.authors,
 		hackatimeProjects: shipProjects(ship),
@@ -206,7 +224,10 @@ export async function loadReviewPage(input: ReviewLoadInput): Promise<ReviewPage
 		pastProjects,
 		evidence: shipEvidence(ship, people),
 		hours: shipHours(ship),
-		settlementEvidence: evidenceFromRows(ship),
+		settlementEvidence: withoutPeople(
+			evidence,
+			excluded.map((person) => person.makerId)
+		),
 		rules: { hoursJustification: meta.hoursJustification, allowDeflation: meta.allowDeflation },
 		update: ship.isUpdate ? { message: ship.updateMessage ?? '' } : null,
 		warnings: warningRows(warnings),

@@ -1037,6 +1037,7 @@ enum FlagKind {
   MARATHON_SESSION
   HOURS_REUSE
   IDLE_DEVLOG
+  HACKATIME_BANNED
 }
 
 /// Where external fraud review sits in a program's pipeline, or off.

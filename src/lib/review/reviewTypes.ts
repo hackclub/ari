@@ -92,6 +92,9 @@ export interface ReviewCollaborator {
 	afterLastCommitSeconds: number;
 	programSeconds: number;
 	projects: { name: string; seconds: number }[];
+	// a check says their time counts for nothing: they stay on the ship but not in the rail.
+	// seconds is what they would have been credited, before any reviewer adjustment
+	excluded: { seconds: number; reason: string } | null;
 }
 
 export interface ReviewMaker {
@@ -181,6 +184,8 @@ export interface LiveChecks {
 	screened: boolean;
 	// null keeps the warnings already shown
 	warnings: ReviewWarning[] | null;
+	// whose time counts for nothing once the checks ran, sorted. null when they did not finish
+	excluded: string[] | null;
 }
 
 export interface FixTarget {

@@ -8,6 +8,7 @@ import {
 	type RuleField
 } from '$lib/review/reviewRules';
 import type { ActionOutcome, DecisionResult } from '$lib/review/reviewTypes';
+import { withoutPeople } from '$lib/review/settlement';
 import { previewSettlement } from '$lib/review/settlementPreview';
 import { hasAllPermissions, isSelfReview } from '$lib/server/authz';
 import { canActOnSubmission } from '$lib/server/claims';
@@ -115,7 +116,15 @@ export async function decideShip(
 	);
 
 	// settled from the evidence and the posted reductions: a client total is never read
-	const preview = previewSettlement(evidenceFromRows(ship), {
+	const excluded = await privateProvider.excludedMakers({
+		submissionId: ship.id,
+		programId: ship.programId
+	});
+	const evidence = withoutPeople(
+		evidenceFromRows(ship),
+		excluded.map((person) => person.makerId)
+	);
+	const preview = previewSettlement(evidence, {
 		adjustments: draft.adjustments,
 		deflateSeconds: draft.deflateSeconds,
 		collaboratorDeflates: draft.collaboratorDeflates,

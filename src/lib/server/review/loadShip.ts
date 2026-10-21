@@ -62,7 +62,8 @@ export function shipPeople(ship: LoadedShip) {
 		lapseSeconds: collaborator.lapseSeconds,
 		afterLastCommitSeconds: collaborator.afterLastCommitSeconds,
 		programSeconds: collaborator.programSeconds,
-		projects: projectSeconds(collaborator.hackatimeProjectSeconds)
+		projects: projectSeconds(collaborator.hackatimeProjectSeconds),
+		excluded: null
 	}));
 	const nameByMakerId = new Map(collaborators.map((person) => [person.makerId, person.name]));
 

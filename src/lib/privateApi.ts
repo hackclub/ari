@@ -29,6 +29,11 @@ export interface DecisionGate {
 	message?: string;
 }
 
+export interface ExcludedMaker {
+	makerId: string;
+	reason: string;
+}
+
 export type DecisionOutcome = 'final' | 'held' | 'parked';
 
 export interface NavTab {
@@ -157,6 +162,8 @@ export interface PrivateProvider {
 	onShipOpened(ship: ShipRef, viewer: Viewer): Promise<ShipWarning[]>;
 	// runs before a decision or a second-pass confirm is recorded
 	beforeDecision(ship: ShipRef): Promise<DecisionGate>;
+	// makers whose time on this ship counts for nothing. reason finishes a sentence about them
+	excludedMakers(ship: ShipRef): Promise<ExcludedMaker[]>;
 	routeHeldDecision(
 		ship: ShipRef,
 		decision: 'approved' | 'changes' | 'rejected'

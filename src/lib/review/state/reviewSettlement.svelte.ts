@@ -134,15 +134,17 @@ export class ReviewSettlement {
 
 	// one entry per collaborator, in the ship's order. empty on a solo ship
 	readonly people: PersonRow[] = $derived.by(() =>
-		(this.#context.data.collaborators ?? []).map((person) => ({
-			makerId: person.makerId,
-			name: person.name,
-			slackId: person.slackId,
-			captured: this.#captured.collaborators[person.makerId] ?? noPerson(),
-			settled: this.preview.settlement.collaborators[person.makerId] ?? noPerson(),
-			reported: this.reported.collaborators[person.makerId] ?? noPerson(),
-			deflateSeconds: this.preview.collaboratorDeflates[person.makerId] ?? 0
-		}))
+		(this.#context.data.collaborators ?? [])
+			.filter((person) => !person.excluded)
+			.map((person) => ({
+				makerId: person.makerId,
+				name: person.name,
+				slackId: person.slackId,
+				captured: this.#captured.collaborators[person.makerId] ?? noPerson(),
+				settled: this.preview.settlement.collaborators[person.makerId] ?? noPerson(),
+				reported: this.reported.collaborators[person.makerId] ?? noPerson(),
+				deflateSeconds: this.preview.collaboratorDeflates[person.makerId] ?? 0
+			}))
 	);
 
 	person(makerId: string): PersonRow | null {

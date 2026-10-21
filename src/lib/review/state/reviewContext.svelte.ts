@@ -1,4 +1,4 @@
-import { goto } from '$app/navigation';
+import { goto, invalidateAll } from '$app/navigation';
 import { page } from '$app/state';
 import { safeReturnPath } from '$lib/returnPath';
 import { reviewHref } from '$lib/shipList';
@@ -38,6 +38,12 @@ export class ReviewContext {
 						return;
 					}
 					if (result.warnings) this.#liveWarnings = { shipId, warnings: result.warnings };
+					const people = this.data.collaborators ?? [];
+					const shown = people.filter((person) => person.excluded).map((person) => person.makerId);
+					const found = (result.excluded ?? []).filter((makerId) =>
+						people.some((person) => person.makerId === makerId)
+					);
+					if (result.excluded && found.join() !== shown.sort().join()) void invalidateAll();
 				})
 				.catch(() => {
 					// the stream was cut by a navigation: keep the warnings already shown

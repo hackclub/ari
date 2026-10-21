@@ -57,6 +57,57 @@ export function usesCommitFallback(evidence: Evidence): boolean {
 	return trackedSeconds === 0 && evidence.commits.some((commit) => commit.codingSeconds > 0);
 }
 
+// their time counts for nothing: their own rows go to zero and their share of a shared row comes
+// off it, so nobody else is credited with it. they stay on the ship so the program hears them at zero.
+// only a teammate is ever excluded: a solo ship is decided as a whole
+export function withoutPeople(evidence: Evidence, makerIds: string[]): Evidence {
+	const people = evidence.collaborators;
+	const excluded = new Set(
+		makerIds.filter((makerId) => people.some((person) => person.makerId === makerId))
+	);
+	if (!excluded.size) return evidence;
+	const keptSeconds = (totalSeconds: number, weights: number[]) => {
+		const shares = splitProportional(totalSeconds, weights);
+		return people.reduce(
+			(kept, person, index) => (excluded.has(person.makerId) ? kept - shares[index] : kept),
+			totalSeconds
+		);
+	};
+	const theirs = (makerId?: string | null) => Boolean(makerId && excluded.has(makerId));
+	return {
+		commits: evidence.commits.map((commit) =>
+			theirs(commit.makerId) ? { ...commit, codingSeconds: 0 } : commit
+		),
+		devlogs: evidence.devlogs.map((devlog) =>
+			theirs(devlog.makerId) ? { ...devlog, seconds: 0 } : devlog
+		),
+		clips: evidence.clips.map((clip) =>
+			theirs(clip.makerId) ? { ...clip, lengthSeconds: 0 } : clip
+		),
+		ship: {
+			hackatimeSeconds: evidence.ship.hackatimeSeconds,
+			afterLastCommitSeconds: keptSeconds(
+				evidence.ship.afterLastCommitSeconds,
+				people.map((person) => person.afterLastCommitSeconds)
+			),
+			programSeconds: keptSeconds(
+				evidence.ship.programSeconds,
+				people.map((person) => person.programSeconds)
+			)
+		},
+		collaborators: people.map((person) =>
+			excluded.has(person.makerId)
+				? {
+						makerId: person.makerId,
+						hackatimeSeconds: 0,
+						afterLastCommitSeconds: 0,
+						programSeconds: 0
+					}
+				: person
+		)
+	};
+}
+
 export function settle(rawAdjustments: unknown, evidence: Evidence): Settlement {
 	const requested = (rawAdjustments ?? {}) as Record<string, Record<string, unknown> | undefined>;
 	const adjustments: Required<Adjustments> = {

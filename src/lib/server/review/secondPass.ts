@@ -2,6 +2,7 @@ import { privateProvider } from '$private';
 import { minutesToSeconds } from '$lib/time';
 import { confirmProblems } from '$lib/review/reviewRules';
 import type { ActionOutcome, ConfirmResult } from '$lib/review/reviewTypes';
+import { withoutPeople } from '$lib/review/settlement';
 import { previewSettlement } from '$lib/review/settlementPreview';
 import { isSelfReview, requirePermission } from '$lib/server/authz';
 import { db } from '$lib/server/db';
@@ -91,7 +92,10 @@ export async function confirmSecondPass(
 	);
 
 	const allowDeflation = ship.program.allowDeflation;
-	const evidence = evidenceFromRows(ship);
+	const evidence = withoutPeople(
+		evidenceFromRows(ship),
+		(await privateProvider.excludedMakers(shipRef)).map((person) => person.makerId)
+	);
 	const preview = previewSettlement(evidence, { ...edits.time, allowDeflation });
 	const heldPreview = previewSettlement(evidence, { ...held, allowDeflation: true });
 	const timeChanged =

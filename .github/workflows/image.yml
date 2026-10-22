@@ -29,6 +29,19 @@ jobs:
       - name: verify private submodule
         run: test -f private/web/index.ts
 
+      # ci only checks the stub, and a provider missing a method still builds; without ARI_PUBLIC_BUILD this checks private/web
+      - uses: oven-sh/setup-bun@v2
+
+      - run: bun install --frozen-lockfile
+
+      # sync writes the .svelte-kit/tsconfig.json the prisma generator reads; generate never connects
+      - run: bunx svelte-kit sync && bunx prisma generate
+        env:
+          DATABASE_URL: postgresql://build:build@localhost:5432/build
+
+      - name: type-check against the private module
+        run: bun run check
+
       # ghcr answers an anonymous pull with 200 only when the package is public
       - name: refuse to push into a public package
         run: |

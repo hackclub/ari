@@ -129,10 +129,8 @@
 </script>
 
 {#snippet itemContent(item: DropdownItem)}
-	{#if item.imageUrl}
-		<img class="image" src={item.imageUrl} alt="" referrerpolicy="no-referrer" />
-	{:else if item.color}
-		<Swatch color={item.color} size="sm" />
+	{#if item.imageUrl || item.color}
+		<Swatch color={item.color ?? 'var(--border)'} src={item.imageUrl} size="sm" />
 	{:else if item.icon}
 		<Icon name={item.icon} size={16} />
 	{/if}
@@ -249,13 +247,6 @@
 		font-family: var(--font-mono);
 		font-size: var(--text-xs);
 		color: var(--text-3);
-	}
-	.image {
-		flex: none;
-		width: var(--space-4);
-		height: var(--space-4);
-		border-radius: var(--space-1);
-		object-fit: cover;
 	}
 	.selected {
 		background: var(--primary-soft);

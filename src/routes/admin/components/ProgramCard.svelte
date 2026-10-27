@@ -53,11 +53,7 @@
 <Card>
 	<article class="programCard">
 		<header>
-			{#if program.iconUrl}
-				<img class="icon" src={program.iconUrl} alt="" referrerpolicy="no-referrer" />
-			{:else}
-				<Swatch color={program.color} />
-			{/if}
+			<Swatch color={program.color} src={program.iconUrl} />
 			<div class="titles">
 				<a class="name" href={resolve('/p/[program]', { program: program.id })}>{program.name}</a>
 				<span class="sub">
@@ -142,13 +138,6 @@
 		align-items: center;
 		gap: var(--space-3);
 		min-width: 0;
-	}
-	.icon {
-		flex: none;
-		width: var(--space-6);
-		height: var(--space-6);
-		border-radius: var(--radius-sm);
-		object-fit: cover;
 	}
 	.titles {
 		display: flex;

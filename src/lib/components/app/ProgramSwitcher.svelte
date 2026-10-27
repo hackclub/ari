@@ -12,10 +12,11 @@
 		programId: string;
 		program: string;
 		color: string;
+		iconUrl: string | null;
 		assigned: AssignedProgram[];
 		orgWide: boolean;
 	}
-	let { programId, program, color, assigned, orgWide }: Props = $props();
+	let { programId, program, color, iconUrl, assigned, orgWide }: Props = $props();
 
 	const items = $derived<DropdownItem[]>([
 		...assigned.map((entry) => ({
@@ -43,7 +44,7 @@
 <Dropdown {items}>
 	{#snippet trigger(triggerProps)}
 		<Button iconAfter="chevD" title={program} aria-label="Program: {program}" {...triggerProps}>
-			<Swatch {color} size="sm" />
+			<Swatch {color} src={iconUrl} size="sm" />
 			<span class="name">{program}</span>
 		</Button>
 	{/snippet}

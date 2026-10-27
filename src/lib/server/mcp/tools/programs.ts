@@ -8,13 +8,13 @@ export const listPrograms: Tool = {
 	spec: {
 		name: 'list_programs',
 		description:
-			'List the programs you can open, with status, accepted evidence types, and how many of the submissions you can see are awaiting review. members is null unless you can view the program’s reviewers.',
+			'List the programs you can open, with status, accepted evidence types, and how many of the submissions you can see are awaiting review. Archived programs are left out. members is null unless you can view the program’s reviewers.',
 		inputSchema: { type: 'object', properties: {}, additionalProperties: false }
 	},
 	handler: async (_args, context) => {
 		const reachable = await reachablePrograms(context);
 		const programs = await db.program.findMany({
-			where: { id: { in: reachable.map((program) => program.id) } },
+			where: { id: { in: reachable.map((program) => program.id) }, status: { not: 'ARCHIVED' } },
 			orderBy: { createdAt: 'desc' },
 			select: {
 				id: true,

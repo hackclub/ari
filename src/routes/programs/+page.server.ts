@@ -12,9 +12,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const canViewAll = hasOrgPermission(user, 'VIEW_ALL_PROGRAMS');
 	const showAll = canViewAll && url.searchParams.get('all') === '1';
 	const programs = await db.program.findMany({
-		where: showAll
-			? { status: { not: 'ARCHIVED' } }
-			: { id: { in: user.memberships.map((membership) => membership.programId) } },
+		where: {
+			status: { not: 'ARCHIVED' },
+			...(showAll ? {} : { id: { in: user.memberships.map((membership) => membership.programId) } })
+		},
 		orderBy: { name: 'asc' }
 	});
 

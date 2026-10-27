@@ -11,7 +11,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		.filter((membership) => membership.isPoc || membership.permissions.includes('MANAGE_SETTINGS'))
 		.map((membership) => membership.programId);
 	const programs = await db.program.findMany({
-		where: { id: { in: settingsProgramIds } },
+		where: { id: { in: settingsProgramIds }, status: { not: 'ARCHIVED' } },
 		select: { id: true, name: true },
 		orderBy: { name: 'asc' }
 	});

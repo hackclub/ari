@@ -23,9 +23,9 @@
 		takes that as a rejection and does not retry. For everything else (timeouts, connection errors,
 		5xx, 408, 429), Ari retries with growing delays (2s, 10s, 30s, 2m, 10m, 30m, 1h, 2h, 4h) before
 		marking the delivery failed, so a destination that is down for a few hours still catches up.
-		Deliveries queued while your endpoint is disabled or misconfigured in Settings wait for up to 12
-		hours instead of failing. The delivery ID stays the same across retries, while a manual resend
-		from the review screen is a new delivery with a new ID.
+		Deliveries queued while your endpoint is disabled or misconfigured in Settings, or while the
+		program is archived, wait for up to 12 hours instead of failing. The delivery ID stays the same
+		across retries, while a manual resend from the review screen is a new delivery with a new ID.
 	</p>
 </DocSection>
 

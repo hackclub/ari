@@ -17,9 +17,12 @@ function tokenState(token: { revokedAt: Date | null; expiresAt: Date | null }) {
 
 export async function pickablePrograms(user: App.SessionUser) {
 	const programs = await db.program.findMany({
-		where: hasOrgPermission(user, 'VIEW_ALL_PROGRAMS')
-			? { status: { not: 'ARCHIVED' } }
-			: { id: { in: user.memberships.map((membership) => membership.programId) } },
+		where: {
+			status: { not: 'ARCHIVED' },
+			...(hasOrgPermission(user, 'VIEW_ALL_PROGRAMS')
+				? {}
+				: { id: { in: user.memberships.map((membership) => membership.programId) } })
+		},
 		select: { id: true, name: true },
 		orderBy: { name: 'asc' }
 	});

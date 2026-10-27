@@ -35,7 +35,10 @@ export const load: LayoutServerLoad = async ({ params, locals }) => {
 			: Promise.resolve(0),
 		// the switcher lists the viewer's own programs plus the one being viewed
 		db.program.findMany({
-			where: { id: { in: [...new Set([programId, ...memberProgramIds])] } },
+			where: {
+				id: { in: [...new Set([programId, ...memberProgramIds])] },
+				OR: [{ id: programId }, { status: { not: 'ARCHIVED' } }]
+			},
 			select: { id: true, name: true, color: true, iconUrl: true, cardBgUrl: true },
 			orderBy: { name: 'asc' }
 		})

@@ -33,6 +33,7 @@
 			{programId}
 			{program}
 			color={page.data.meta?.color ?? 'var(--primary)'}
+			iconUrl={page.data.meta?.iconUrl ?? null}
 			assigned={page.data.assignedPrograms ?? []}
 			orgWide={page.data.orgWide === true}
 		/>

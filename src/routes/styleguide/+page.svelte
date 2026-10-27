@@ -126,6 +126,7 @@
 		<div class="row">
 			<Card>Raised card</Card>
 			<Card variant="flat">Flat card</Card>
+			<Card backdrop="/flag.png">Card with a backdrop</Card>
 		</div>
 	</section>
 
@@ -175,6 +176,9 @@
 		<div class="row">
 			<Swatch color="#338eda" />
 			<Swatch color="#ff8c37" size="sm" />
+			<Swatch color="#338eda" src="/flag.png" />
+			<Swatch color="#ff8c37" src="/flag.png" size="sm" />
+			<Swatch color="#ec3750" src="/missing.png" />
 		</div>
 	</section>
 

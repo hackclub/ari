@@ -60,10 +60,10 @@
 		<ul class="programGrid">
 			{#each data.assigned as program (program.id)}
 				<li>
-					<Card>
+					<Card backdrop={program.cardBgUrl}>
 						<div class="programCard">
 							<div class="cardHead">
-								<Swatch color={program.color} />
+								<Swatch color={program.color} src={program.iconUrl} />
 								<a class="name" href={resolve('/p/[program]', { program: program.id })}
 									>{program.name}</a
 								>

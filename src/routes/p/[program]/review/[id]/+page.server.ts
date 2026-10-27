@@ -11,6 +11,7 @@ import { toActionResult } from '$lib/server/review/guards';
 import { loadReviewPage } from '$lib/server/review/load';
 import { requeueShip, revertShip } from '$lib/server/review/overrides';
 import { resyncShip, resyncStatus } from '$lib/server/review/resync';
+import { saveReviewerNote } from '$lib/server/review/reviewerNote';
 import { confirmSecondPass } from '$lib/server/review/secondPass';
 import { returnSecondPass } from '$lib/server/review/secondPassReturn';
 import { editShip, uploadShipImage } from '$lib/server/review/shipEdit';
@@ -60,6 +61,12 @@ export const actions: Actions = {
 		const user = signedIn(locals);
 		return toActionResult(
 			await dismissWarning(user, params.program, params.id, await request.formData())
+		);
+	},
+	saveReviewerNote: async ({ params, locals, request }) => {
+		const user = signedIn(locals);
+		return toActionResult(
+			await saveReviewerNote(user, params.program, params.id, await request.formData())
 		);
 	},
 

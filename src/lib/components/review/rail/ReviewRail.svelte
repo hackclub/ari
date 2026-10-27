@@ -7,6 +7,7 @@
 	import CustomFieldsSection from './CustomFieldsSection.svelte';
 	import HoursSummary from './HoursSummary.svelte';
 	import NotesSection from './NotesSection.svelte';
+	import ReviewerNoteField from './ReviewerNoteField.svelte';
 
 	interface Props {
 		footer: Snippet;
@@ -80,6 +81,7 @@
 		{#if wizard.shows('fields') && context.data.customFields.length}
 			<CustomFieldsSection />
 		{/if}
+		<ReviewerNoteField />
 	</div>
 	<div class="footer" data-review-region="railFooter">
 		{@render footer()}

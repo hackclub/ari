@@ -97,7 +97,10 @@ export async function invitePeople(
 
 	const wanted = input.programs.map((name) => name.trim()).filter(Boolean);
 	const programs = wanted.length
-		? await db.program.findMany({ where: { name: { in: wanted } }, select: { id: true } })
+		? await db.program.findMany({
+				where: { name: { in: wanted }, status: { not: 'ARCHIVED' } },
+				select: { id: true }
+			})
 		: [];
 	const programIds = programs.map((program) => program.id);
 

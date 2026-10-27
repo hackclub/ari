@@ -26,7 +26,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}),
 		db.program.findMany({
 			orderBy: { name: 'asc' },
-			select: { id: true, name: true, color: true }
+			select: { id: true, name: true, color: true, status: true }
 		}),
 		db.invite.findMany({ where: { acceptedAt: null }, orderBy: { createdAt: 'desc' } })
 	]);
@@ -86,7 +86,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		people: [...userPeople, ...invitedPeople],
-		programs: programRows.map((program) => ({ name: program.name, color: program.color })),
+		programs: programRows.map((program) => ({
+			name: program.name,
+			color: program.color,
+			archived: program.status === 'ARCHIVED'
+		})),
 		canManage,
 		canGrant,
 		grantable: allOrgPermissions.filter((permission) => hasOrgPermission(viewer, permission))

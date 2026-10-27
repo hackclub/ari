@@ -249,7 +249,7 @@
 {#if data.canManage}
 	<InviteDialog
 		bind:open={inviteOpen}
-		programs={data.programs}
+		programs={data.programs.filter((program) => !program.archived)}
 		grantable={data.canGrant ? data.grantable : []}
 	/>
 {/if}

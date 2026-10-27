@@ -366,7 +366,7 @@ test('update swaps organizers: memberships for known people, invites for the res
 	expect(invites.map((invite) => invite.email)).toEqual([emailFor('later')]);
 });
 
-test('archiving takes the program out of the browse-all list and restoring brings it back', async () => {
+test('archiving takes the program out of every program list and restoring brings it back', async () => {
 	const programId = await created(manager, inputFor('listed', { organizers: [firstLead.email] }));
 	const listedFor = async (user: App.SessionUser, query: string) => {
 		const result = await loadProgramList({
@@ -382,14 +382,15 @@ test('archiving takes the program out of the browse-all list and restoring bring
 	};
 
 	expect(await listedFor(browser, '?all=1')).toContain(programId);
+	expect(await listedFor(member, '')).toContain(programId);
 	expect(await archiveProgram(manager, programId)).toEqual({ ok: true });
 	expect(await archiveProgram(manager, programId)).toEqual({ ok: true });
 	expect(await listedFor(browser, '?all=1')).not.toContain(programId);
-	// unchanged from the old app: a member's own list is keyed on membership, not status
-	expect(await listedFor(member, '')).toContain(programId);
+	expect(await listedFor(member, '')).not.toContain(programId);
 
 	expect(await unarchiveProgram(manager, programId)).toEqual({ ok: true });
 	expect(await listedFor(browser, '?all=1')).toContain(programId);
+	expect(await listedFor(member, '')).toContain(programId);
 
 	const events = await db.activityEvent.findMany({
 		where: { programId, text: { contains: 'archived' } }

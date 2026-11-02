@@ -2,6 +2,7 @@
 	import PageHeader from '$lib/components/app/PageHeader.svelte';
 	import { Button, Card, Textarea } from '$lib/components/ui';
 	import { customCss } from '$lib/customCss.svelte';
+	import KeyboardShortcuts from './components/KeyboardShortcuts.svelte';
 	import PersonalTemplates from './components/PersonalTemplates.svelte';
 	import ThemeEditor from './components/ThemeEditor.svelte';
 
@@ -45,6 +46,10 @@
 			>
 		{/if}
 	</div>
+</Card>
+
+<Card>
+	<KeyboardShortcuts />
 </Card>
 
 <Card>

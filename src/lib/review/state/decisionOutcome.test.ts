@@ -25,6 +25,7 @@ const sources = (overrides: Partial<RuleSources> = {}): RuleSources => ({
 	deflateSeconds: null,
 	canAct: true,
 	canSecondPass: false,
+	isPoc: false,
 	held: null,
 	...overrides
 });
@@ -87,6 +88,7 @@ describe('problems per action', () => {
 			held: { decision: 'changes', madeByViewer: true }
 		});
 		expect(codes('confirm', own)).toEqual(['ownHeldDecision']);
+		expect(codes('confirm', { ...own, isPoc: true })).toEqual([]);
 	});
 
 	test('the decision each action resolves to', () => {

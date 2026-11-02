@@ -222,7 +222,7 @@ const confirm = (overrides: Partial<ConfirmRuleInput> = {}): ConfirmRuleInput =>
 	notes: { note: 'Nice.', technicalFeatures: 'Parser.', deflationReason: '' },
 	settlement: { adjustments: {} },
 	deflateSeconds: null,
-	viewer: { canSecondPass: true, madeHeldDecision: false },
+	viewer: { canSecondPass: true, madeHeldDecision: false, isPoc: false },
 	...overrides
 });
 
@@ -237,12 +237,24 @@ describe('confirmProblems', () => {
 
 	test('only second-pass holders, never the reviewer who made the decision', () => {
 		expect(
-			confirmCodes(confirm({ viewer: { canSecondPass: false, madeHeldDecision: false } }))
+			confirmCodes(
+				confirm({ viewer: { canSecondPass: false, madeHeldDecision: false, isPoc: false } })
+			)
 		).toEqual(['secondPassPermission']);
 		expect(
-			confirmCodes(confirm({ viewer: { canSecondPass: true, madeHeldDecision: true } }))
+			confirmCodes(
+				confirm({ viewer: { canSecondPass: true, madeHeldDecision: true, isPoc: false } })
+			)
 		).toEqual(['ownHeldDecision']);
 		expect(confirmCodes(confirm({ status: 'pending' }))).toEqual(['notAwaitingSecondPass']);
+	});
+
+	test('the poc may confirm their own held decision', () => {
+		expect(
+			confirmCodes(
+				confirm({ viewer: { canSecondPass: true, madeHeldDecision: true, isPoc: true } })
+			)
+		).toEqual([]);
 	});
 
 	test('overriding to changes or reject needs a note, confirming as held does not', () => {

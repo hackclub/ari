@@ -3,7 +3,7 @@ import { privateProvider } from '$private';
 import type { RuleFieldType } from '$lib/review/reviewRules';
 import type { ReviewPageData, ReviewVm } from '$lib/review/reviewTypes';
 import { settle, withoutPeople } from '$lib/review/settlement';
-import { canReviewProgram, hasAllPermissions, hasPermission } from '$lib/server/authz';
+import { canReviewProgram, hasAllPermissions, hasPermission, isPoc } from '$lib/server/authz';
 import { isClaimStale } from '$lib/server/claims';
 import { decrypt } from '$lib/server/crypto';
 import { db } from '$lib/server/db';
@@ -178,16 +178,24 @@ export async function loadReviewPage(input: ReviewLoadInput): Promise<ReviewPage
 	const canOverride = hasPermission(user, programId, 'OVERRIDE_DECISIONS');
 	const canUseVms = hasPermission(user, programId, 'USE_VMS');
 	const operatesProgram = hasAllPermissions(user, programId);
+	const viewerIsPoc = isPoc(user, programId);
 	const decided = decidedStatuses.includes(ship.status);
 	const closed = closedStatuses.includes(ship.status);
 	const secondPass = ship.status === 'secondpass';
-	const heldByViewer = secondPass && Boolean(recorded?.madeByViewer);
+	// a poc may confirm their own held decision, so it never locks them out
+	const heldByViewer = secondPass && Boolean(recorded?.madeByViewer) && !viewerIsPoc;
 	const canEditHeld = canSecondPass && secondPass && !heldByViewer;
 	const readOnly = claimedByOther || !canReview;
 	const canManageVm = !closed || canEditHeld;
 	const vmEnabled = meta.allowVms && vmConfigured();
 	const skipsHold = program.secondPassOrganizerBypass && operatesProgram;
 	const holds = (kindHeld: boolean) => program.secondPass && kindHeld && !skipsHold;
+	// the bypass never skips fraud review: an approval it would park is still held
+	const approvalParks =
+		skipsHold &&
+		program.secondPass &&
+		program.secondPassApproved &&
+		(await privateProvider.routeHeldDecision(shipRef, 'approved')) === 'park';
 
 	const reviewerVm: ReviewVm | null = vmRow
 		? {
@@ -268,7 +276,15 @@ export async function loadReviewPage(input: ReviewLoadInput): Promise<ReviewPage
 			readOnly,
 			byName: claimedByOther ? (ship.claimedBy?.name ?? null) : null
 		},
-		viewer: { canReview, canSecondPass, canOverride, canUseVms, canViewReviewed, operatesProgram },
+		viewer: {
+			canReview,
+			canSecondPass,
+			canOverride,
+			canUseVms,
+			canViewReviewed,
+			operatesProgram,
+			isPoc: viewerIsPoc
+		},
 		state: {
 			decided,
 			closed,
@@ -279,7 +295,7 @@ export async function loadReviewPage(input: ReviewLoadInput): Promise<ReviewPage
 			canManageVm,
 			canLaunchVm: vmEnabled && canUseVms && canManageVm && !readOnly && ship.track === 'software',
 			holds: {
-				approved: holds(program.secondPassApproved),
+				approved: holds(program.secondPassApproved) || approvalParks,
 				changes: holds(program.secondPassChanges),
 				rejected: holds(program.secondPassRejected)
 			}

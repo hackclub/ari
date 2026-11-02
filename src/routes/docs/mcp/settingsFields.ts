@@ -83,7 +83,7 @@ export const settingsFields: DocField[] = [
 		name: 'secondPassOrganizerBypass',
 		type: 'boolean',
 		description:
-			'With second pass on, an organizer or org admin deciding in the normal queue skips the hold. Default `true`.'
+			'With second pass on, an organizer or org admin deciding in the normal queue skips the hold. Fraud review is never skipped: an approval it parks comes back through second pass. Default `true`.'
 	},
 	{
 		name: 'reviewersCannotReviewOwnProjects',

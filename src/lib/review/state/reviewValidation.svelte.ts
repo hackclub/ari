@@ -62,6 +62,7 @@ export class ReviewValidation {
 			deflateSeconds: heldTime ? heldTime.deflateSeconds : this.#settlement.preview.deflateSeconds,
 			canAct: !context.readOnly,
 			canSecondPass: context.viewer.canSecondPass,
+			isPoc: context.viewer.isPoc,
 			held: context.secondPass
 				? {
 						decision: context.heldDecision ?? 'approved',

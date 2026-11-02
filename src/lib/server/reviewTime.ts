@@ -49,7 +49,7 @@ export async function reviewTime(
 			id: { in: [...finalBySubmission.keys()] },
 			status: { in: ['approved', 'changes', 'rejected'] }
 		},
-		// ingestedAt, not queuedAt: a re-ship after requested changes inherits the old queue position
+		// ingestedAt, not queuedAt: queuedAt follows a backdated shipped_at
 		select: { id: true, ingestedAt: true }
 	});
 

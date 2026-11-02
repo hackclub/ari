@@ -51,7 +51,7 @@
 			<Toggle label="Hold rejections" bind:checked={form.values.secondPassRejected} />
 			<Toggle
 				label="Organizers skip the hold"
-				description="Decisions made by the people running the program (the point of contact, org operators, and members with every permission) go out right away instead of waiting for a second pass. Turn this off to hold their decisions too."
+				description="Decisions made by the people running the program (the point of contact, org operators, and members with every permission) go out right away instead of waiting for a second pass. Fraud review still applies: an approval it holds comes back through second pass. Turn this off to hold their decisions too."
 				bind:checked={form.values.secondPassOrganizerBypass}
 			/>
 		</SettingGroup>

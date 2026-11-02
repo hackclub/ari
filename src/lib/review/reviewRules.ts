@@ -206,7 +206,7 @@ export interface ConfirmRuleInput {
 	notes: Pick<DecisionNotes, 'note' | 'technicalFeatures' | 'deflationReason'>;
 	settlement: { adjustments: Adjustments };
 	deflateSeconds: number | null;
-	viewer: { canSecondPass: boolean; madeHeldDecision: boolean };
+	viewer: { canSecondPass: boolean; madeHeldDecision: boolean; isPoc: boolean };
 }
 
 export function confirmProblems(input: ConfirmRuleInput): ReviewProblem[] {
@@ -225,7 +225,8 @@ export function confirmProblems(input: ConfirmRuleInput): ReviewProblem[] {
 			field: 'status',
 			message: 'This ship is no longer awaiting second pass.'
 		});
-	if (input.viewer.madeHeldDecision)
+	// the poc answers for the program, so there is nobody above them to confirm it
+	if (input.viewer.madeHeldDecision && !input.viewer.isPoc)
 		problems.push({
 			code: 'ownHeldDecision',
 			field: 'permission',

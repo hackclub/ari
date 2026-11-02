@@ -163,8 +163,12 @@ export async function decideShip(
 	// someone a confirmer of others' decisions, not exempt from oversight themselves
 	const organizerBypass =
 		ship.program.secondPassOrganizerBypass && hasAllPermissions(user, ship.programId);
-	const hold = ship.program.secondPass && heldKinds[decision] && !organizerBypass;
-	const parked = hold && (await privateProvider.routeHeldDecision(shipRef, decision)) === 'park';
+	const heldKind = ship.program.secondPass && heldKinds[decision];
+	// the bypass skips second pass, never fraud review: a parked decision comes back through
+	// second pass, since the fraud team may deflate it in their justification
+	const parked =
+		heldKind && (await privateProvider.routeHeldDecision(shipRef, decision)) === 'park';
+	const hold = parked || (heldKind && !organizerBypass);
 	const outcome = parked ? 'parked' : hold ? 'held' : 'final';
 
 	const vmids = await shipVmIds(ship.id);

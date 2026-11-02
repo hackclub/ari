@@ -111,7 +111,6 @@ export function submissionRow(submission: SubmissionWithMaker, programColor: str
 		evidenceSeconds: evidenceSeconds(submission.hours ?? null),
 		status: submission.status as Status,
 		track: submission.track as Track,
-		// a re-ship keeps the prior ship's queue spot, so the wait counts from queuedAt
 		ago: ago(submission.queuedAt ?? submission.receivedAt),
 		evidence: (submission.acceptedEvidence[0] ?? 'commits') as Evidence,
 		color: programColor,

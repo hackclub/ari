@@ -241,7 +241,7 @@ describe('confirming a held decision', () => {
 		expect((await shipRow(blank.id)).status).toBe('secondpass');
 	});
 
-	test('only second-pass holders act, and never on their own decision', async () => {
+	test('only second-pass holders act, and only the poc on their own decision', async () => {
 		const ship = await heldShip('Gate');
 		expect(await thrownStatus(() => confirmSecondPass(reviewer, programId, ship.id, null))).toBe(
 			403
@@ -258,6 +258,14 @@ describe('confirming a held decision', () => {
 		expect(refused).toMatchObject({ ok: false, status: 403, failure: { code: 'ownHeldDecision' } });
 		expect((await shipRow(own.id)).status).toBe('secondpass');
 		expect(await fixtures.deliveries(own.id)).toEqual([]);
+
+		await setProgram({ secondPassOrganizerBypass: false });
+		const pocOwn = await fixtures.ship('PocOwnHeld');
+		const pocHeld = await decideShip('approved', organizer, programId, pocOwn.id, decisionForm());
+		await setProgram({ secondPassOrganizerBypass: true });
+		expect(pocHeld.ok && pocHeld.data.outcome).toBe('held');
+		expect((await confirmSecondPass(organizer, programId, pocOwn.id, null)).ok).toBe(true);
+		expect((await shipRow(pocOwn.id)).status).toBe('approved');
 
 		const stale = await confirmSecondPass(organizer, programId, ship.id, decisionForm({}, 9));
 		expect(stale).toMatchObject({ ok: false, status: 409, failure: { code: 'staleIngest' } });

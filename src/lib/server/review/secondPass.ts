@@ -4,7 +4,7 @@ import { confirmProblems } from '$lib/review/reviewRules';
 import type { ActionOutcome, ConfirmResult } from '$lib/review/reviewTypes';
 import { withoutPeople } from '$lib/review/settlement';
 import { previewSettlement } from '$lib/review/settlementPreview';
-import { isSelfReview, requirePermission } from '$lib/server/authz';
+import { isPoc, isSelfReview, requirePermission } from '$lib/server/authz';
 import { db } from '$lib/server/db';
 import { dispatchReviewWebhook, outboundEvent } from '$lib/server/outbound';
 import { replayLegacyReview } from '$lib/server/outboundRedispatch';
@@ -74,9 +74,10 @@ export async function confirmSecondPass(
 	const review = ship.reviews[0];
 	if (!review) return refuse(409, 'noReview', 'No recorded review to confirm.');
 	const madeHeldDecision = review.reviewerId === user.id;
+	const viewerIsPoc = isPoc(user, programId);
 
 	const shipRef = { submissionId: ship.id, programId };
-	if (!madeHeldDecision) {
+	if (!madeHeldDecision || viewerIsPoc) {
 		const gate = await privateProvider.beforeDecision(shipRef);
 		if (gate.blocked)
 			return refuse(409, 'blocked', gate.message ?? 'This ship can no longer be decided.');
@@ -119,7 +120,7 @@ export async function confirmSecondPass(
 		},
 		settlement: legacy ? { adjustments: legacy.settled.adjustments } : preview.settlement,
 		deflateSeconds: legacy ? review.deflateMinutes : preview.deflateSeconds,
-		viewer: { canSecondPass: true, madeHeldDecision }
+		viewer: { canSecondPass: true, madeHeldDecision, isPoc: viewerIsPoc }
 	});
 	if (problems.length) return refuseProblems(problems);
 

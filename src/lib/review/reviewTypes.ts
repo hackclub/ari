@@ -253,6 +253,7 @@ export interface ViewerCapabilities {
 	canViewReviewed: boolean;
 	// the tier that skips the second-pass hold when the program allows it
 	operatesProgram: boolean;
+	isPoc: boolean;
 }
 
 export interface ReviewState {

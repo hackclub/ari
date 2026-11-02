@@ -579,12 +579,8 @@ model Submission {
   /// backdated migration ship is not born >6h old and instantly reaped.
   ingestedAt          DateTime                 @default(now())
   /// Queue position: what the open queue sorts (and shows "waiting since") by.
-  /// Equals receivedAt for a fresh ship; a re-ship after "request changes"
-  /// inherits the prior ship's queuedAt (set at ingest by ari-webhooks), so a
-  /// project sent back for fixes returns to its original spot in line instead
-  /// of the back of the queue. Any other prior outcome (rejected / withdrawn /
-  /// reverted) resets it. receivedAt stays the canonical ship date and the
-  /// evidence-window bound - never sort or display the queue by it.
+  /// Set at ingest by ari-webhooks to this ship's own receivedAt, re-ships after
+  /// "request changes" included: the wait always counts from the latest ship.
   queuedAt            DateTime                 @default(now())
   evidenceSyncedAt    DateTime?
   /// Evidence snapshot counter, written by ari-webhooks: +1 inside every capture

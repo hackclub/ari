@@ -24,7 +24,9 @@ export const settingsProperties = {
 	secondPassApproved: toggle('Second pass holds approvals.'),
 	secondPassChanges: toggle('Second pass holds changes requests.'),
 	secondPassRejected: toggle('Second pass holds rejections.'),
-	secondPassOrganizerBypass: toggle('Organizer decisions skip the second-pass hold.'),
+	secondPassOrganizerBypass: toggle(
+		'Organizer decisions skip the second-pass hold. Fraud review still runs: an approval it parks returns through second pass.'
+	),
 	reviewersCannotReviewOwnProjects: toggle('Hide a reviewer’s own ships from them.'),
 	allowDeflation: toggle('Reviewers may deflate verified time.'),
 	hoursJustification: toggle(

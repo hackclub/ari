@@ -35,7 +35,6 @@ export const load: PageServerLoad = async ({ parent, locals, url }) => {
 			},
 			claimedBy: { select: { id: true, name: true } }
 		},
-		// queuedAt, not receivedAt: a re-ship after "request changes" keeps its place in line
 		orderBy: [{ priority: 'desc' }, { queuedAt: 'asc' }]
 	});
 

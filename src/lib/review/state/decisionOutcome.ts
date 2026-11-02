@@ -52,6 +52,7 @@ export interface RuleSources {
 	deflateSeconds: number | null;
 	canAct: boolean;
 	canSecondPass: boolean;
+	isPoc: boolean;
 	held: { decision: Decision; madeByViewer: boolean } | null;
 }
 
@@ -74,7 +75,8 @@ export function problemsForAction(action: ReviewAction, sources: RuleSources): R
 			deflateSeconds: sources.deflateSeconds,
 			viewer: {
 				canSecondPass: sources.canSecondPass,
-				madeHeldDecision: sources.held?.madeByViewer ?? false
+				madeHeldDecision: sources.held?.madeByViewer ?? false,
+				isPoc: sources.isPoc
 			}
 		});
 	}

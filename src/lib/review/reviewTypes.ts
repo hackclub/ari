@@ -64,6 +64,7 @@ export interface ReviewShip {
 	projectId: string;
 	title: string;
 	description: string | null;
+	reviewerNote: string;
 	author: string;
 	authorSlackId: string | null;
 	status: ShipStatus;

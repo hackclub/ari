@@ -116,6 +116,12 @@ export class ReviewSettlement {
 	// what the row reductions took off
 	readonly reducedSeconds = $derived(this.capturedSeconds - this.settledSeconds);
 	readonly deflateSeconds = $derived(this.preview.deflateSeconds ?? 0);
+	readonly deductedSeconds = $derived.by(() =>
+		this.showsRecorded && this.#context.recorded
+			? this.#context.recorded.deductedSeconds
+			: this.preview.deductedSeconds
+	);
+	readonly deductionLabel = $derived.by(() => this.#context.data.deductionLabel ?? 'Deducted');
 	readonly approvedSeconds = $derived(this.reported.approvedSeconds);
 	readonly deflated = $derived(this.preview.deflated);
 	readonly maxDeflateSeconds = $derived(this.settledSeconds);

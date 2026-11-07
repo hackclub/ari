@@ -13,7 +13,8 @@
 	const shipRef = $derived({ submissionId: context.ship.id, programId: context.programId });
 	const solo = $derived(!context.data.collaborators);
 	const recordedOnly = $derived(context.closed && !context.canEditHeld);
-	const cut = $derived(settlement.reducedSeconds > 0 || settlement.deflateSeconds > 0);
+	const reviewerCut = $derived(settlement.reducedSeconds > 0 || settlement.deflateSeconds > 0);
+	const cut = $derived(reviewerCut || settlement.deductedSeconds > 0);
 	// a held or recorded decision that is not an approval credits nothing, whatever was logged
 	const nothingCredited = $derived(
 		context.closed && context.recorded !== null && context.recorded.decision !== 'approved'
@@ -112,8 +113,15 @@
 					<span class="value">−{formatDuration(settlement.deflateSeconds)}</span>
 				</li>
 			{/if}
+			{#if settlement.deductedSeconds > 0}
+				<li data-hours-cut="deduction" title="Set outside this review. It cannot be changed here.">
+					<span class="dot cut"></span>
+					<span class="label">{settlement.deductionLabel}</span>
+					<span class="value">−{formatDuration(settlement.deductedSeconds)}</span>
+				</li>
+			{/if}
 		</ul>
-		{#if cut && !recordedOnly}
+		{#if reviewerCut && !recordedOnly}
 			<p class="note">
 				<b>{formatDuration(settlement.approvedSeconds)}</b> credited of
 				{formatDuration(settlement.capturedSeconds)} captured. Mention the difference in your audit note.

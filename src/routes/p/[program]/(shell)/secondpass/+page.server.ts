@@ -1,3 +1,4 @@
+import { privateProvider } from '$private';
 import { db } from '$lib/server/db';
 import { makerDisplaySelect, reviewedRow } from '$lib/server/serialize';
 import { requirePermission, selfReviewWhere } from '$lib/server/authz';
@@ -66,8 +67,14 @@ export const load: PageServerLoad = async ({ parent, locals, url }) => {
 	const filtered = track ? ordered.filter((ship) => ship.track === track) : ordered;
 	const page = pageParam(url, filtered.length);
 
+	const shown = pageSlice(filtered, page);
+	// a fixed cut can land while the decision is held: the confirm settles with the live one
+	const deductions = await Promise.all(
+		shown.map((ship) => privateProvider.shipDeductions({ submissionId: ship.id, programId }))
+	);
+
 	return {
-		rows: pageSlice(filtered, page).map((ship) => {
+		rows: shown.map((ship, index) => {
 			const row = reviewedRow(ship, meta.color);
 			const review = ship.reviews[0];
 			if (!review) return { ...row, priority: ship.priority, decision: 'approved' as const };
@@ -80,7 +87,15 @@ export const load: PageServerLoad = async ({ parent, locals, url }) => {
 				...row,
 				priority: ship.priority,
 				// the net the maker will get, as the review screen shows it
-				approvedSeconds: Math.max(0, storedApprovedSeconds(review) - deflateSeconds),
+				approvedSeconds: Math.max(
+					0,
+					storedApprovedSeconds(review) -
+						deflateSeconds -
+						Object.values(deductions[index]?.seconds ?? {}).reduce(
+							(sum, seconds) => sum + seconds,
+							0
+						)
+				),
 				decision: review.decision
 			};
 		}),

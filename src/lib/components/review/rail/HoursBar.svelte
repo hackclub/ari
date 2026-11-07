@@ -20,7 +20,8 @@
 			tone: tones[row.source]
 		})),
 		{ label: 'Taken off rows', value: settlement.reducedSeconds, tone: 'neutral' },
-		{ label: 'Deflated', value: settlement.deflateSeconds, tone: 'neutral' }
+		{ label: 'Deflated', value: settlement.deflateSeconds, tone: 'neutral' },
+		{ label: settlement.deductionLabel, value: settlement.deductedSeconds, tone: 'neutral' }
 	]);
 </script>
 

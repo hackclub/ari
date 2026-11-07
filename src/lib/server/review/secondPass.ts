@@ -93,10 +93,17 @@ export async function confirmSecondPass(
 	);
 
 	const allowDeflation = ship.program.allowDeflation;
-	const evidence = withoutPeople(
-		evidenceFromRows(ship),
-		(await privateProvider.excludedMakers(shipRef)).map((person) => person.makerId)
-	);
+	const [excluded, deductions] = await Promise.all([
+		privateProvider.excludedMakers(shipRef),
+		privateProvider.shipDeductions(shipRef)
+	]);
+	const evidence = {
+		...withoutPeople(
+			evidenceFromRows(ship),
+			excluded.map((person) => person.makerId)
+		),
+		deductionsSeconds: deductions?.seconds
+	};
 	const preview = previewSettlement(evidence, { ...edits.time, allowDeflation });
 	const heldPreview = previewSettlement(evidence, { ...held, allowDeflation: true });
 	const timeChanged =
@@ -104,9 +111,15 @@ export async function confirmSecondPass(
 		preview.deflateSeconds !== heldPreview.deflateSeconds ||
 		canonical(preview.collaboratorDeflates) !== canonical(heldPreview.collaboratorDeflates);
 
-	// a review the old app recorded replays under its own minute model until its time is edited:
-	// an edit re-settles it in seconds and the row becomes version 3
-	const legacy = !isSecondsReview(review) && !timeChanged ? replayLegacyReview(ship, review) : null;
+	// a review the old app recorded replays under its own minute model until its time is edited
+	// or a fixed cut lands: either re-settles it in seconds and the row becomes version 3
+	const hasDeductions = Object.values(evidence.deductionsSeconds ?? {}).some(
+		(seconds) => seconds > 0
+	);
+	const legacy =
+		!isSecondsReview(review) && !timeChanged && !hasDeductions
+			? replayLegacyReview(ship, review)
+			: null;
 
 	const problems = confirmProblems({
 		heldDecision: review.decision,
@@ -125,8 +138,12 @@ export async function confirmSecondPass(
 	if (problems.length) return refuseProblems(problems);
 
 	// a resync while held changes the evidence under unchanged adjustments
+	// so does a fixed cut that landed after the decision was held
 	const rewriteTime =
-		!legacy && (timeChanged || preview.settlement.approvedSeconds !== review.approvedSeconds);
+		!legacy &&
+		(timeChanged ||
+			preview.settlement.approvedSeconds !== review.approvedSeconds ||
+			canonical(evidence.deductionsSeconds ?? {}) !== canonical(review.deductionsSeconds ?? {}));
 	const edited =
 		edits.textsChanged ||
 		edits.fieldsChanged ||
@@ -158,7 +175,8 @@ export async function confirmSecondPass(
 					...(rewriteTime
 						? reviewColumns(preview.settlement, {
 								deflateSeconds: preview.deflateSeconds,
-								collaboratorDeflates: preview.collaboratorDeflates
+								collaboratorDeflates: preview.collaboratorDeflates,
+								deductions: evidence.deductionsSeconds
 							})
 						: {})
 				}

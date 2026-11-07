@@ -9,6 +9,7 @@ import {
 	replayStoredReview,
 	reviewColumns,
 	storedApprovedSeconds,
+	storedDeductedSeconds,
 	type SettlementRows
 } from './settlementStore';
 
@@ -100,6 +101,7 @@ describe('reviewColumns', () => {
 			collaboratorSeconds: {},
 			deflateSeconds: null,
 			collaboratorDeflatesSeconds: Prisma.DbNull,
+			deductionsSeconds: Prisma.DbNull,
 			approvedMinutes: 121,
 			adjustments: {},
 			collaboratorMinutes: {},
@@ -304,5 +306,36 @@ describe('draftColumns', () => {
 			deflateMinutes: null,
 			collaboratorDeflates: {}
 		});
+	});
+});
+
+describe('fixed deductions', () => {
+	test('are snapshotted on the review and replayed after the deflate', () => {
+		const settlement = settle({}, evidenceFromRows(soloRows));
+		const columns = reviewColumns(settlement, {
+			deflateSeconds: 288,
+			deductions: { makerSolo: 1800, makerNone: 0 }
+		});
+		expect(columns.approvedSeconds).toBe(7288);
+		expect(columns.deductionsSeconds).toEqual({ makerSolo: 1800 });
+		const stored = {
+			adjustmentsSeconds: columns.adjustmentsSeconds,
+			deflateSeconds: columns.deflateSeconds,
+			collaboratorDeflatesSeconds: null,
+			deductionsSeconds: columns.deductionsSeconds
+		};
+		expect(replayStoredReview(stored, soloRows).approvedSeconds).toBe(5200); // 7288 - 288 - 1800
+		expect(storedDeductedSeconds(stored, soloRows)).toBe(1800);
+	});
+
+	test('a review recorded without any replays as before', () => {
+		const settlement = settle({}, evidenceFromRows(soloRows));
+		const stored = {
+			adjustmentsSeconds: settlement.adjustments,
+			deflateSeconds: null,
+			collaboratorDeflatesSeconds: null
+		};
+		expect(replayStoredReview(stored, soloRows).approvedSeconds).toBe(7288);
+		expect(storedDeductedSeconds(stored, soloRows)).toBe(0);
 	});
 });

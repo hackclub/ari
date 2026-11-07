@@ -9,9 +9,13 @@ import type {
 } from '$lib/review/reviewTypes';
 import { db } from '$lib/server/db';
 import { whenLabel } from '$lib/server/serialize';
-import { storedApprovedSeconds, type SettlementRows } from '$lib/server/settlementStore';
+import {
+	storedApprovedSeconds,
+	storedDeductedSeconds,
+	type SettlementRows
+} from '$lib/server/settlementStore';
 import { isSecondsReview, reportedSeconds, storedTimeRequest } from '$lib/server/review/heldReview';
-import { closedStatuses, decidedStatuses } from '$lib/server/review/guards';
+import { closedStatuses, decidedStatuses, heldStatuses } from '$lib/server/review/guards';
 
 const historyInclude = {
 	reviewer: true,
@@ -103,11 +107,16 @@ export function recordedDecision(
 	reviews: HistoryReview[],
 	ship: ShipKey,
 	rows: ReplayRows,
-	viewerId: string
+	viewerId: string,
+	liveDeductions?: Record<string, number>
 ): RecordedDecision | null {
 	if (!closedStatuses.includes(ship.status)) return null;
-	const own = reviews.find((review) => review.submissionId === ship.id);
-	if (!own) return null;
+	const stored = reviews.find((review) => review.submissionId === ship.id);
+	if (!stored) return null;
+	// a held decision is confirmed with the fixed cuts as they are now, so it shows them
+	const own = heldStatuses.includes(ship.status)
+		? { ...stored, deductionsSeconds: liveDeductions ?? null }
+		: stored;
 	const time = storedTimeRequest(own);
 	return {
 		reviewId: own.id,
@@ -120,6 +129,7 @@ export function recordedDecision(
 		when: whenLabel(own.createdAt),
 		approvedSeconds: storedApprovedSeconds(own),
 		reported: reportedSeconds(own, rows),
+		deductedSeconds: isSecondsReview(own) ? storedDeductedSeconds(own, rows) : 0,
 		note: own.noteToMaker,
 		audit: own.auditNote,
 		technicalFeatures: own.technicalFeatures,

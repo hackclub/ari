@@ -57,6 +57,7 @@ export interface RecordedDecision extends DecisionDraft {
 		breakdown: SourceSeconds;
 		collaborators: Record<string, PersonSeconds>;
 	};
+	deductedSeconds: number;
 }
 
 export interface ReviewShip {
@@ -291,6 +292,8 @@ export interface ReviewPageData {
 	};
 	// pass to previewSettlement as is
 	settlementEvidence: Evidence;
+	// who decided the fixed cuts in settlementEvidence
+	deductionLabel: string | null;
 	rules: { hoursJustification: boolean; allowDeflation: boolean };
 	update: { message: string } | null;
 	warnings: ReviewWarning[];

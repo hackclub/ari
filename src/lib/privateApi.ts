@@ -34,6 +34,12 @@ export interface ExcludedMaker {
 	reason: string;
 }
 
+// seconds keyed by makerId. label names who decided the cut, for the hours panel
+export interface ShipDeductions {
+	label: string;
+	seconds: Record<string, number>;
+}
+
 export type DecisionOutcome = 'final' | 'held' | 'parked';
 
 export interface NavTab {
@@ -164,6 +170,9 @@ export interface PrivateProvider {
 	beforeDecision(ship: ShipRef): Promise<DecisionGate>;
 	// makers whose time on this ship counts for nothing. reason finishes a sentence about them
 	excludedMakers(ship: ShipRef): Promise<ExcludedMaker[]>;
+	// fixed cuts decided outside the review, applied after the reviewer's own. the label may depend
+	// on the viewer; the seconds never do
+	shipDeductions(ship: ShipRef, viewer?: Viewer): Promise<ShipDeductions | null>;
 	routeHeldDecision(
 		ship: ShipRef,
 		decision: 'approved' | 'changes' | 'rejected'

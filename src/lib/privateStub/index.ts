@@ -7,6 +7,7 @@ export const privateProvider: PrivateProvider = {
 	onShipOpened: async () => [],
 	beforeDecision: async () => ({ blocked: false }),
 	excludedMakers: async () => [],
+	shipDeductions: async () => null,
 	routeHeldDecision: async () => 'secondPass',
 	afterDecision: async () => {},
 	dismissWarning: async () => false,

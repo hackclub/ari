@@ -7,10 +7,12 @@ import {
 	toLegacyMinutesBreakdown
 } from '$lib/time';
 import {
+	applyDeductions,
 	applyDeflate,
 	clampCollaboratorDeflates,
 	settle,
 	type Adjustments,
+	type Deductions,
 	type Evidence,
 	type PersonSeconds,
 	type Settlement,
@@ -88,6 +90,7 @@ export interface StoredSettlement {
 	adjustmentsSeconds: unknown;
 	deflateSeconds: number | null;
 	collaboratorDeflatesSeconds: unknown;
+	deductionsSeconds?: unknown;
 }
 
 // what a version 3 review reports: its settlement replayed, then its stored deflate applied
@@ -102,7 +105,17 @@ export function replayStoredReview(review: StoredSettlement, rows: SettlementRow
 			program: 0
 		};
 	}
-	return applyDeflate(settled, review.deflateSeconds, review.collaboratorDeflatesSeconds);
+	return applyDeductions(
+		applyDeflate(settled, review.deflateSeconds, review.collaboratorDeflatesSeconds),
+		review.deductionsSeconds,
+		(rows.collaborators ?? []).length > 0
+	);
+}
+
+export function storedDeductedSeconds(review: StoredSettlement, rows: SettlementRows): number {
+	if (!review.deductionsSeconds) return 0;
+	const without = replayStoredReview({ ...review, deductionsSeconds: null }, rows);
+	return without.approvedSeconds - replayStoredReview(review, rows).approvedSeconds;
 }
 
 // old ari still writes minute-only reviews, whose seconds columns stay at their default
@@ -118,6 +131,8 @@ export const storedApprovedSeconds = (review: {
 export interface DeflateRequest {
 	deflateSeconds?: unknown;
 	collaboratorDeflates?: unknown;
+	// snapshotted so a replay reports the same total without asking where the cuts came from
+	deductions?: Deductions;
 }
 
 // approvedSeconds and collaboratorSeconds stay the undeflated settlement: the cut is stored beside them
@@ -129,6 +144,7 @@ export function reviewColumns(settlement: Settlement, deflate: DeflateRequest = 
 	const shipCutSeconds = clampSeconds(deflate.deflateSeconds, settlement.approvedSeconds);
 	const deflateSeconds = perPersonSeconds > 0 ? perPersonSeconds : shipCutSeconds || null;
 	const deflateMinutes = deflateSeconds === null ? null : toLegacyMinutes(deflateSeconds);
+	const deductions = positiveSecondsMap(deflate.deductions);
 
 	// old ari expects the per-person minutes to sum to deflateMinutes
 	const deflatedMakerIds = Object.keys(deflates);
@@ -149,6 +165,7 @@ export function reviewColumns(settlement: Settlement, deflate: DeflateRequest = 
 		collaboratorSeconds: settlement.collaborators as Record<string, PersonSeconds>,
 		deflateSeconds,
 		collaboratorDeflatesSeconds: perPersonSeconds > 0 ? deflates : Prisma.DbNull,
+		deductionsSeconds: Object.keys(deductions).length ? deductions : Prisma.DbNull,
 		approvedMinutes: toLegacyMinutes(settlement.approvedSeconds),
 		// version 3 never replays from minutes
 		adjustments: {},

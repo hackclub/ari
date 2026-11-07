@@ -76,7 +76,7 @@ export const outboundFields: DocField[] = [
 		name: 'review.approved_seconds',
 		type: 'integer',
 		description:
-			'The settled time for the whole ship in whole seconds, after any reviewer reduction. It sits immediately after `review.approved_hours` and is present whenever `review.approved_minutes` is. This is the exact figure and the one new integrations should read. `approved_minutes` and `approved_hours` are rounded views of it kept for compatibility: `approved_minutes` is `approved_seconds` rounded to the nearest minute (half a minute rounds up), and `approved_hours` is `approved_minutes` divided by 60, rounded to one decimal. Reviews decided before Ari settled in seconds report their minute value × 60.'
+			'The settled time for the whole ship in whole seconds, after any reviewer reduction and any time the fraud team removed. It sits immediately after `review.approved_hours` and is present whenever `review.approved_minutes` is. This is the exact figure and the one new integrations should read. `approved_minutes` and `approved_hours` are rounded views of it kept for compatibility: `approved_minutes` is `approved_seconds` rounded to the nearest minute (half a minute rounds up), and `approved_hours` is `approved_minutes` divided by 60, rounded to one decimal. Reviews decided before Ari settled in seconds report their minute value × 60.'
 	},
 	{
 		name: 'review.seconds_breakdown',
@@ -94,6 +94,6 @@ export const outboundFields: DocField[] = [
 		name: 'fraud',
 		type: 'object',
 		description:
-			'Only on `review.fraud`. The result of the extra fraud check. `verdict` is `passed` or `failed` for the whole ship. `checks` is a list with one entry per maker, each with their `email`, `slack_id`, a `trust_score` from 1 to 10 (higher is better), and a short `justification` in plain words. Read `verdict` for the outcome rather than interpreting the score yourself. On this event `decision` is null and `review` just carries the system reviewer with an empty note.'
+			"Only on `review.fraud`. The result of the extra fraud check. `verdict` is `passed` or `failed` for the whole ship. `checks` is a list with one entry per maker, each with their `email`, `slack_id`, a `trust_score` from 1 to 10 (higher is better), and a short `justification` in plain words. Reviews recorded since the fraud team started recording removed time also have `deflate_seconds`, the integer seconds they removed (`0` when they removed nothing), and on those `justification` is their reason for the removal; entries without `deflate_seconds` were reviewed before that. On the methods that check before the ship is decided, that time is already taken out of the decision's `approved_seconds`; on `review.fraud` the ship was already decided, so subtract it yourself if you credit it. Read `verdict` for the outcome rather than interpreting the score yourself. On this event `decision` is null and `review` just carries the system reviewer with an empty note."
 	}
 ];

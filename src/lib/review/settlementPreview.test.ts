@@ -139,3 +139,71 @@ test('a malformed form reads as empty, never as a number it did not carry', () =
 	expect(readDecisionForm(new FormData()).draft.deflateSeconds).toBeNull();
 	expect(draftFromUnknown(null).note).toBe('');
 });
+
+test('a fixed deduction comes off after the reviewer deflate and is not theirs', () => {
+	const preview = previewSettlement(
+		{ ...solo, deductionsSeconds: { makerSolo: 1800 } },
+		request({ deflateSeconds: 288 })
+	);
+	expect(preview.settlement.approvedSeconds).toBe(7288);
+	expect(preview.deflateSeconds).toBe(288);
+	expect(preview.deductedSeconds).toBe(1800);
+	expect(preview.reported.approvedSeconds).toBe(5200); // 7288 - 288 - 1800
+	const breakdown = preview.reported.breakdown;
+	expect(breakdown.hackatime + breakdown.journals + breakdown.lapse + breakdown.program).toBe(5200);
+});
+
+test('a fixed deduction applies even when deflation is off', () => {
+	const preview = previewSettlement(
+		{ ...solo, deductionsSeconds: { makerSolo: 3600 } },
+		request({ deflateSeconds: 1000, allowDeflation: false })
+	);
+	expect(preview.deflateSeconds).toBeNull();
+	expect(preview.deflated).toBe(false);
+	expect(preview.deductedSeconds).toBe(3600);
+	expect(preview.reported.approvedSeconds).toBe(3688); // 7288 - 3600
+});
+
+test('a fixed deduction never takes more than what is left', () => {
+	const preview = previewSettlement(
+		{ ...solo, deductionsSeconds: { makerSolo: 99999 } },
+		request({ deflateSeconds: 7000 })
+	);
+	expect(preview.deductedSeconds).toBe(288); // 7288 - 7000
+	expect(preview.reported.approvedSeconds).toBe(0);
+});
+
+test('a teammate deduction comes off only their share', () => {
+	const preview = previewSettlement({ ...pair, deductionsSeconds: { makerTwo: 400 } }, request());
+	expect(preview.deductedSeconds).toBe(400);
+	expect(preview.reported.approvedSeconds).toBe(3200); // 3000 + 600 - 400
+	expect(preview.reported.collaborators.makerTwo.total).toBe(600); // 1000 - 400
+	expect(preview.reported.collaborators.makerOne.total).toBe(2600); // 2000 + 600
+});
+
+test('no deduction leaves the reported time untouched', () => {
+	const preview = previewSettlement({ ...solo, deductionsSeconds: {} }, request());
+	expect(preview.deductedSeconds).toBe(0);
+	expect(preview.reported.approvedSeconds).toBe(7288);
+});
+
+test('on a solo ship the maker deduction comes off the whole ship, not their attributed rows', () => {
+	const attributed: Evidence = {
+		...solo,
+		devlogs: [{ id: 'devlogOne', seconds: 1830, makerId: 'makerSolo' }],
+		deductionsSeconds: { makerSolo: 3600 }
+	};
+	const preview = previewSettlement(attributed, request());
+	expect(preview.deductedSeconds).toBe(3600);
+	expect(preview.reported.approvedSeconds).toBe(3688); // 7288 - 3600
+});
+
+test('a cut on someone no longer on the ship comes off nobody', () => {
+	const preview = previewSettlement(
+		{ ...pair, deductionsSeconds: { makerTwo: 400, makerGone: 900 } },
+		request()
+	);
+	expect(preview.deductedSeconds).toBe(400);
+	expect(preview.reported.collaborators.makerOne.total).toBe(2600); // 2000 + 600, untouched
+	expect(preview.reported.collaborators.makerTwo.total).toBe(600); // 1000 - 400
+});

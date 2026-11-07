@@ -258,6 +258,9 @@ model Program {
   /// Signing secret for this program's fraud-review outcome webhook, AES-256-GCM
   /// encrypted like fraudApiKeyEnc. Null when the service issues none.
   fraudWebhookSecretEnc            String?
+  /// Which version of ari's review fields the fraud desk event was last asked for.
+  /// Reset to 0 when a new key is saved, so ari-webhooks sets them up again.
+  fraudReviewFieldsVersion         Int                @default(0)
   /// Slack channel id of this program's designated reviewers channel. When set,
   /// the bot (Ari Services) invites members into it when they join the program
   /// (plus a roster backfill when the channel is first configured) and kicks
@@ -753,20 +756,29 @@ model HoursBreakdown {
 
 /// One external fraud-review request per (submission, maker).
 model FraudCheck {
-  id            String           @id @default(cuid())
-  submissionId  String
-  makerId       String
-  programId     String
+  id             String           @id @default(cuid())
+  submissionId   String
+  makerId        String
+  programId      String
   /// Project id at the external fraud-review service. Null until filed.
-  joeProjectId  String?
+  joeProjectId   String?
   /// Score returned by the external review. Null while pending.
-  trustScore    Int?
-  justification String?
-  status        FraudCheckStatus @default(pending)
-  createdAt     DateTime         @default(now())
-  resolvedAt    DateTime?
-  program       Program          @relation(fields: [programId], references: [id], onDelete: Cascade)
-  submission    Submission       @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  trustScore     Int?
+  /// Only kept for reviews without reviewFields.
+  justification  String?
+  /// Answers to the event's review fields. Null on a review recorded before them.
+  reviewFields   Json?
+  /// Time the review takes off, from the deflateHours answer.
+  deflateSeconds Int?
+  /// The reason for deflateSeconds, safe to show reviewers.
+  deflateReason  String?
+  reviewerName   String?
+  reviewedAt     DateTime?
+  status         FraudCheckStatus @default(pending)
+  createdAt      DateTime         @default(now())
+  resolvedAt     DateTime?
+  program        Program          @relation(fields: [programId], references: [id], onDelete: Cascade)
+  submission     Submission       @relation(fields: [submissionId], references: [id], onDelete: Cascade)
 
   @@unique([submissionId, makerId])
   @@index([programId, status])
@@ -837,6 +849,9 @@ model Review {
   collaboratorSeconds         Json           @default("{}")
   deflateSeconds              Int?
   collaboratorDeflatesSeconds Json?
+  /// Fixed cuts decided outside the review (seconds keyed by makerId), applied after
+  /// the reviewer's deflate. Snapshotted so a replay reports the same total.
+  deductionsSeconds           Json?
   /// Collaborative ships: per-person note to maker keyed by makerId. Delivered
   /// outbound as collaborators[].note_to_maker so each person can learn why THEIR
   /// hours came out the way they did without it being group business; noteToMaker

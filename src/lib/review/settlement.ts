@@ -31,7 +31,11 @@ export interface Evidence {
 		afterLastCommitSeconds: number;
 		programSeconds: number;
 	}[];
+	// fixed cuts decided outside the review, keyed by makerId. the reviewer cannot change them
+	deductionsSeconds?: Deductions;
 }
+
+export type Deductions = Record<string, number>;
 
 export interface Settlement {
 	adjustments: Required<Adjustments>;
@@ -309,4 +313,25 @@ export function applyDeflate(
 	});
 
 	return { approvedSeconds: targetSeconds, breakdown, collaborators };
+}
+
+// collaborative: a cut comes off that teammate's share, or nobody's if they left the ship.
+// solo: people only hold their attributed rows, so every cut comes off the whole ship
+export function applyDeductions(
+	settled: Settled,
+	rawDeductions: unknown,
+	collaborative: boolean
+): Settled {
+	const deductions = (rawDeductions ?? {}) as Record<string, unknown>;
+	if (collaborative) {
+		const known = Object.fromEntries(
+			Object.entries(deductions).filter(([makerId]) => makerId in settled.collaborators)
+		);
+		return Object.keys(known).length ? applyDeflate(settled, null, known) : settled;
+	}
+	const totalSeconds = Object.values(deductions).reduce<number>(
+		(sum, seconds) => sum + (clampSeconds(seconds, 2147483647) ?? 0), // postgres integer max: 2 ** 31 - 1
+		0
+	);
+	return totalSeconds === 0 ? settled : applyDeflate(settled, totalSeconds);
 }

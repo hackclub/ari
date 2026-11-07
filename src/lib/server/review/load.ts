@@ -127,7 +127,8 @@ export async function loadReviewPage(input: ReviewLoadInput): Promise<ReviewPage
 		warnings,
 		privatePanels,
 		issue,
-		excluded
+		excluded,
+		deductions
 	] = await Promise.all([
 		db.program.findUniqueOrThrow({
 			where: { id: programId },
@@ -168,12 +169,13 @@ export async function loadReviewPage(input: ReviewLoadInput): Promise<ReviewPage
 		privateProvider.shipWarnings(shipRef, viewer),
 		privateProvider.reviewPanelData(shipRef, viewer),
 		ship.evidenceSyncedAt ? null : captureIssue(ship.id),
-		privateProvider.excludedMakers(shipRef)
+		privateProvider.excludedMakers(shipRef),
+		privateProvider.shipDeductions(shipRef, viewer)
 	]);
 
 	const evidence = evidenceFromRows(ship);
 	const captured = settle({}, evidence);
-	const recorded = recordedDecision(reviews, ship, ship, user.id);
+	const recorded = recordedDecision(reviews, ship, ship, user.id, deductions?.seconds);
 	const canSecondPass = hasPermission(user, programId, 'SECOND_PASS');
 	const canOverride = hasPermission(user, programId, 'OVERRIDE_DECISIONS');
 	const canUseVms = hasPermission(user, programId, 'USE_VMS');
@@ -232,10 +234,14 @@ export async function loadReviewPage(input: ReviewLoadInput): Promise<ReviewPage
 		pastProjects,
 		evidence: shipEvidence(ship, people),
 		hours: shipHours(ship),
-		settlementEvidence: withoutPeople(
-			evidence,
-			excluded.map((person) => person.makerId)
-		),
+		settlementEvidence: {
+			...withoutPeople(
+				evidence,
+				excluded.map((person) => person.makerId)
+			),
+			deductionsSeconds: deductions?.seconds
+		},
+		deductionLabel: deductions?.label ?? null,
 		rules: { hoursJustification: meta.hoursJustification, allowDeflation: meta.allowDeflation },
 		update: ship.isUpdate ? { message: ship.updateMessage ?? '' } : null,
 		warnings: warningRows(warnings),

@@ -1,6 +1,7 @@
 import { clampSeconds } from '$lib/time';
 import { isDeflated } from '$lib/review/reviewRules';
 import {
+	applyDeductions,
 	applyDeflate,
 	clampCollaboratorDeflates,
 	settle,
@@ -27,7 +28,9 @@ export interface SettlementPreview {
 	collaboratorDeflates: CollaboratorDeflates;
 	// the cut that applies: the per-person sum when any survives the clamp, else the flat one
 	deflateSeconds: number | null;
-	// after the deflate: what the program is told
+	// the fixed cuts that applied after the reviewer's own, never part of deflateSeconds
+	deductedSeconds: number;
+	// after the deflate and the fixed cuts: what the program is told
 	reported: {
 		approvedSeconds: number;
 		breakdown: SourceSeconds;
@@ -63,13 +66,21 @@ export function previewSettlement(
 		? clampSeconds(request.deflateSeconds, settlement.approvedSeconds) || null
 		: null;
 	const deflateSeconds = perPersonSeconds > 0 ? perPersonSeconds : flatSeconds;
+	const deflated = applyDeflate(settlement, deflateSeconds, deflates);
+	// applied even with deflation off: the reviewer did not choose it
+	const reported = applyDeductions(
+		deflated,
+		evidence.deductionsSeconds,
+		evidence.collaborators.length > 0
+	);
 
 	return {
 		settlement,
 		capturedSeconds: settle({}, evidence).approvedSeconds,
 		collaboratorDeflates: deflates,
 		deflateSeconds,
-		reported: applyDeflate(settlement, deflateSeconds, deflates),
+		deductedSeconds: deflated.approvedSeconds - reported.approvedSeconds,
+		reported,
 		deflated: isDeflated(settlement.adjustments, deflateSeconds)
 	};
 }

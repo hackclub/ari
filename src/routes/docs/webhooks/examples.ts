@@ -206,7 +206,7 @@ export const sampleFraud = `{
     "verdict": "passed",
     "checks": [
       { "email": "maker1@example.com", "slack_id": "U0123ABCD", "trust_score": 9, "justification": "justification 1." },
-      { "email": "maker2@example.com", "slack_id": "U0789IJKL", "trust_score": 7, "justification": "justification 2." }
+      { "email": "maker2@example.com", "slack_id": "U0789IJKL", "trust_score": 7, "justification": "justification 2.", "deflate_seconds": 5400 }
     ]
   },
   "review": { "note_to_maker": "", "reviewer": { "email": "system@ari", "slack_id": null } }

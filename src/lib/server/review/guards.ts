@@ -16,6 +16,7 @@ import { db } from '$lib/server/db';
 import { hasFreshReauth, programReauthConfig, reauthLoginUrl } from '$lib/server/reauth';
 
 export const decidedStatuses = ['approved', 'changes', 'rejected'];
+export const heldStatuses = ['secondpass', 'fraudreview'];
 // a held ship is only confirmed or returned, a parked one only moves when its verdict lands
 export const closedStatuses = [
 	...decidedStatuses,

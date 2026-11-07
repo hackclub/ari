@@ -116,14 +116,18 @@ export async function decideShip(
 	);
 
 	// settled from the evidence and the posted reductions: a client total is never read
-	const excluded = await privateProvider.excludedMakers({
-		submissionId: ship.id,
-		programId: ship.programId
-	});
-	const evidence = withoutPeople(
-		evidenceFromRows(ship),
-		excluded.map((person) => person.makerId)
-	);
+	const shipKey = { submissionId: ship.id, programId: ship.programId };
+	const [excluded, deductions] = await Promise.all([
+		privateProvider.excludedMakers(shipKey),
+		privateProvider.shipDeductions(shipKey)
+	]);
+	const evidence = {
+		...withoutPeople(
+			evidenceFromRows(ship),
+			excluded.map((person) => person.makerId)
+		),
+		deductionsSeconds: deductions?.seconds
+	};
 	const preview = previewSettlement(evidence, {
 		adjustments: draft.adjustments,
 		deflateSeconds: draft.deflateSeconds,
@@ -174,7 +178,8 @@ export async function decideShip(
 	const vmids = await shipVmIds(ship.id);
 	const columns = reviewColumns(preview.settlement, {
 		deflateSeconds: preview.deflateSeconds,
-		collaboratorDeflates: preview.collaboratorDeflates
+		collaboratorDeflates: preview.collaboratorDeflates,
+		deductions: evidence.deductionsSeconds
 	});
 
 	// a correction bumps ingestVersion: a decision judged against replaced data must lose

@@ -29,7 +29,7 @@
 		const canvas = canvasElement;
 		if (!canvas) return;
 		// a canvas cannot read css variables, so tokens are resolved here and again on a theme change
-		void theme.dark;
+		void theme.revision;
 		const styles = getComputedStyle(canvas);
 		const token = (name: string) => styles.getPropertyValue(name).trim();
 		const toneColor = (tone: StackedBarTone) =>

@@ -306,7 +306,7 @@
 		min-width: 0;
 	}
 	.name {
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.name,
 	.email {

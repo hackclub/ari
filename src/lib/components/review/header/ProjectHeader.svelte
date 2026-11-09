@@ -156,7 +156,7 @@
 		min-width: 0;
 		margin: 0;
 		font-size: var(--text-2xl);
-		font-weight: 700;
+		font-weight: 600;
 		line-height: 1.15;
 		overflow-wrap: anywhere;
 	}
@@ -207,7 +207,7 @@
 		margin: 0;
 		color: var(--color-blue);
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.update p {
 		margin: 0;

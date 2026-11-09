@@ -241,7 +241,7 @@
 		gap: var(--space-1);
 		color: var(--text-3);
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 		white-space: nowrap;
 	}
 	.top dt {

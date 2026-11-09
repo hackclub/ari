@@ -68,10 +68,9 @@
 	}
 	h2 {
 		margin: 0;
-		color: var(--text-3);
-		font-size: var(--text-xs);
-		font-weight: 700;
-		text-transform: uppercase;
+		color: var(--text-2);
+		font-size: var(--text-sm);
+		font-weight: 600;
 	}
 	.fix {
 		--tone: var(--color-orange);
@@ -92,7 +91,7 @@
 		gap: var(--space-2);
 		color: var(--tone);
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.title {
 		flex: 1;

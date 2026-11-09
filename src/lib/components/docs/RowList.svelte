@@ -38,7 +38,7 @@
 		border-radius: var(--radius-sm);
 		font-family: var(--font-mono);
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 		text-align: center;
 	}
 	.ok {
@@ -53,7 +53,7 @@
 		flex: 0 0 auto;
 		min-width: 128px;
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--text);
 	}
 	.mono {

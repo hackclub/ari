@@ -244,8 +244,7 @@
 	}
 	.programName {
 		font-size: var(--text-lg);
-		font-weight: 800;
-		letter-spacing: -0.02em;
+		font-weight: 600;
 	}
 	.muted {
 		font-size: var(--text-sm);
@@ -254,14 +253,13 @@
 	h1 {
 		margin: 0 0 var(--space-1);
 		font-size: var(--text-2xl);
-		font-weight: 800;
-		letter-spacing: -0.03em;
+		font-weight: 600;
 		line-height: 1.1;
 	}
 	h2 {
 		margin: 0 0 var(--space-1);
 		font-size: var(--text-md);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.steps {
 		display: flex;
@@ -288,7 +286,7 @@
 		border-radius: var(--radius-full);
 		background: var(--surface-2);
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.steps .live {
 		color: var(--text);
@@ -304,7 +302,7 @@
 	}
 	.noteTitle {
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.note {
 		margin-top: var(--space-1);

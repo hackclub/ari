@@ -179,10 +179,9 @@
 	}
 	h2 {
 		margin: 0;
-		color: var(--text-3);
-		font-size: var(--text-xs);
-		font-weight: 700;
-		text-transform: uppercase;
+		color: var(--text-2);
+		font-size: var(--text-sm);
+		font-weight: 600;
 	}
 	.picker {
 		max-width: 100%;
@@ -210,14 +209,14 @@
 		flex: 1;
 		min-width: 0;
 		overflow: hidden;
-		font-weight: 700;
+		font-weight: 600;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 	.total,
 	.value {
 		font-family: var(--font-mono);
-		font-weight: 700;
+		font-weight: 600;
 		white-space: nowrap;
 	}
 	.value {

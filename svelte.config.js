@@ -15,6 +15,8 @@ const config = {
 	},
 	kit: {
 		adapter: adapter(),
+		// each stylesheet link blocks first paint for a round trip, and most of them are tiny
+		inlineStyleThreshold: 8192, // 8 KB: 8 * 1024
 		alias: {
 			$private: privateDir,
 			'$private/*': `${privateDir}/*`,
@@ -28,9 +30,8 @@ const config = {
 			directives: {
 				'default-src': ['self'],
 				'script-src': ['self'],
-				// google fonts: layout.css imports the stylesheet, which pulls the font files
-				'style-src': ['self', 'unsafe-inline', 'https://fonts.googleapis.com'],
-				'font-src': ['self', 'data:', 'https://fonts.gstatic.com'],
+				'style-src': ['self', 'unsafe-inline'],
+				'font-src': ['self', 'data:'],
 				'img-src': ['self', 'https:', 'data:', 'blob:'],
 				'media-src': ['self', 'https:', 'blob:'],
 				'connect-src': [

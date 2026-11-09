@@ -116,7 +116,7 @@
 		color: var(--text-3);
 		font: inherit;
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 		white-space: nowrap;
 		cursor: grab;
 		/* vertical swipes still scroll the page; sideways ones are ours to scroll the strip or drag */

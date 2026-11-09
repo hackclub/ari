@@ -87,7 +87,7 @@
 	}
 	.name {
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.email {
 		overflow: hidden;

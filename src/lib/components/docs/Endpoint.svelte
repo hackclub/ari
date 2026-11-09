@@ -33,7 +33,7 @@
 		border-radius: var(--radius-sm);
 		font-family: var(--font-mono);
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.post {
 		color: var(--color-green);

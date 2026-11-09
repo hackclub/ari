@@ -120,18 +120,18 @@
 		margin: 0;
 		padding: var(--space-2) var(--space-3) var(--space-1);
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--text-3);
 	}
 	h2 {
 		margin: 0 0 var(--space-3);
 		font-size: var(--text-lg);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	h3 {
 		margin: 0;
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--text-2);
 	}
 	p {

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import './layout.css';
-	import favicon from '$lib/assets/favicon.svg';
+	import { asset } from '$app/paths';
 	import NamePrompt from '$lib/components/app/NamePrompt.svelte';
 	import PrivateOverlay from '$lib/components/app/PrivateOverlay.svelte';
 	import { NavProgress, Toaster } from '$lib/components/ui';
@@ -9,7 +9,7 @@
 	let { children, data } = $props();
 </script>
 
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
+<svelte:head><link rel="icon" href={asset('/favicon.svg')} type="image/svg+xml" /></svelte:head>
 
 <NavProgress />
 <Toaster />

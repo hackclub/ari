@@ -58,8 +58,7 @@
 	h1 {
 		margin: 0;
 		font-size: var(--text-xl);
-		font-weight: 800;
-		letter-spacing: -0.03em;
+		font-weight: 600;
 		line-height: 1.2;
 	}
 	p {

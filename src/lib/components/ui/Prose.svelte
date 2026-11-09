@@ -37,19 +37,18 @@
 	.prose :global(:is(h1, h2)) {
 		margin: var(--space-1) 0 var(--space-3);
 		font-size: var(--text-xl);
-		font-weight: 800;
+		font-weight: 600;
 		line-height: 1.25;
-		letter-spacing: -0.02em;
 	}
 	.prose :global(h3) {
 		margin: var(--space-4) 0 var(--space-2);
 		font-size: var(--text-lg);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.prose :global(:is(h4, h5, h6)) {
 		margin: var(--space-3) 0 var(--space-2);
 		font-size: var(--text-md);
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--text-2);
 	}
 	.prose :global(:is(p, li, td, blockquote)) {
@@ -103,12 +102,12 @@
 	.prose :global(th) {
 		background: var(--surface-2);
 		color: var(--text);
-		font-weight: 700;
+		font-weight: 600;
 		white-space: nowrap;
 	}
 	.prose :global(strong) {
 		color: var(--text);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.prose :global(code) {
 		padding: 2px var(--space-1);

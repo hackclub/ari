@@ -85,8 +85,7 @@
 	h1 {
 		margin: 0;
 		font-size: var(--text-xl);
-		font-weight: 800;
-		letter-spacing: -0.02em;
+		font-weight: 600;
 		overflow-wrap: anywhere;
 	}
 	.email {

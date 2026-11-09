@@ -86,8 +86,7 @@
 		margin: var(--space-4) 0 0;
 		font-family: var(--font-mono);
 		font-size: clamp(3.5rem, 15vw, 5.25rem);
-		font-weight: 700;
-		letter-spacing: -0.05em;
+		font-weight: 600;
 		line-height: 1;
 		text-align: center;
 		color: var(--primary);

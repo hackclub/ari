@@ -92,7 +92,7 @@
 		background: var(--tone);
 	}
 	.name {
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--text-2);
 	}
 	.amount {

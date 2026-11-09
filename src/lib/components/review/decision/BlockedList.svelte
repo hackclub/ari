@@ -59,7 +59,7 @@
 		align-items: center;
 		gap: var(--space-1);
 		margin: 0;
-		font-weight: 700;
+		font-weight: 600;
 	}
 	ul {
 		display: flex;

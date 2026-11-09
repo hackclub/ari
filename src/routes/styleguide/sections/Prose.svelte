@@ -23,6 +23,6 @@
 	h2 {
 		margin: 0 0 var(--space-3);
 		font-size: var(--text-lg);
-		font-weight: 700;
+		font-weight: 600;
 	}
 </style>

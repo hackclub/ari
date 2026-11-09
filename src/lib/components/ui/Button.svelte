@@ -63,12 +63,11 @@
 		height: var(--control-md);
 		padding: 0 var(--space-3);
 		border: 1px solid transparent;
-		border-radius: var(--radius-full);
+		border-radius: var(--radius-md);
 		font-family: var(--font-sans);
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 500;
 		line-height: 1;
-		letter-spacing: -0.01em;
 		white-space: nowrap;
 		text-decoration: none;
 		cursor: pointer;
@@ -107,11 +106,10 @@
 	.primary {
 		background: var(--primary);
 		color: var(--on-primary);
-		box-shadow: var(--shadow-sm);
 	}
 	.primary:hover:not(:disabled),
 	.ok:hover:not(:disabled) {
-		filter: brightness(1.05);
+		filter: brightness(1.08);
 	}
 	.ghost {
 		background: var(--surface);

@@ -123,7 +123,7 @@
 		margin: 0;
 		color: var(--color-orange);
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	p {
 		margin: 0;

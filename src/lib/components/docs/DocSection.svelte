@@ -31,8 +31,7 @@
 		gap: var(--space-2);
 		margin: 0 0 var(--space-1);
 		font-size: var(--text-xl);
-		font-weight: 800;
-		letter-spacing: -0.02em;
+		font-weight: 600;
 		color: var(--text);
 		scroll-margin-top: var(--space-5);
 	}

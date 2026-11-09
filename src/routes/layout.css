@@ -1,6 +1,3 @@
-/* font @import must come before tailwind: it expands inline and would leave this after real rules */
-@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=JetBrains+Mono:wght@400;500;700&display=swap');
-
 /* no utilities layer: a scoped class named like a utility (fixed, hidden, grid) would pick up its declarations */
 @layer theme, base;
 @import 'tailwindcss/theme.css' layer(theme);
@@ -10,67 +7,68 @@
 
 :root {
 	color-scheme: light;
-	--bg: #dededf;
-	--surface: #f4f4f6;
-	--surface-2: #ececef;
-	--surface-3: #e3e3e8;
-	--border: #dededf;
-	--border-2: #cccccf;
-	--text: #1d1d22;
-	--text-2: #56565f;
-	--text-3: #82828a;
+	--bg: #f3f2ee;
+	--surface: #fcfcfa;
+	--surface-2: #f2f1ed;
+	--surface-3: #e9e7e2;
+	--border: #e3e1dc;
+	--border-2: #d2d0c9;
+	--text: #1c1b19;
+	--text-2: #57554f;
+	--text-3: #686660;
 	--primary: #ec3750;
 	--primary-soft: #fdecef;
 	--ring: rgba(236, 55, 80, 0.32);
 
-	/* the brand brights fall below readable contrast on white, so light deepens them to ~4.5:1 */
-	--accent-red: #d22e47;
-	--accent-orange: #c2620a;
-	--accent-yellow: #a87b00;
-	--accent-green: #0f8a5f;
-	--accent-cyan: #15788c;
-	--accent-blue: #1f6dbf;
+	/* the brand brights fall below readable contrast on white, so light deepens them to 4.5:1,
+	   also on a badge's 12% tint */
+	--accent-red: #c02940;
+	--accent-orange: #a25208;
+	--accent-yellow: #846100;
+	--accent-green: #0d7551;
+	--accent-cyan: #147083;
+	--accent-blue: #1e68b6;
 	--accent-purple: #8a27b8;
 
-	--shadow-sm: 0 1px 2px rgba(24, 24, 27, 0.05);
-	--shadow: 0 1px 2px rgba(24, 24, 27, 0.05), 0 10px 30px rgba(24, 24, 27, 0.07);
-	--shadow-lg: 0 24px 60px rgba(24, 24, 27, 0.14);
-
-	--grad: linear-gradient(165deg, #ee415a 0%, #e22f49 60%, #cf2942 100%);
-	--grad-soft: linear-gradient(165deg, rgba(236, 55, 80, 0.08), rgba(236, 55, 80, 0.03));
+	--shadow-sm: 0 1px 1px rgba(28, 27, 25, 0.04);
+	--shadow: 0 1px 2px rgba(28, 27, 25, 0.06), 0 4px 12px rgba(28, 27, 25, 0.06);
+	--shadow-lg: 0 12px 32px rgba(28, 27, 25, 0.14);
 }
 
 .dark {
 	color-scheme: dark;
-	--bg: #121217;
-	--surface: #18181f;
-	--surface-2: #23232e;
-	--surface-3: #2b2b38;
-	--border: #31313d;
-	--border-2: #3c3c4a;
-	--text: #f4f4f8;
-	--text-2: #b6b6c6;
-	--text-3: #9494a8;
+	--bg: #121211;
+	--surface: #191918;
+	--surface-2: #212120;
+	--surface-3: #2a2a28;
+	--border: #2b2b29;
+	--border-2: #3a3a37;
+	--text: #ecebe8;
+	--text-2: #aeada8;
+	--text-3: #94938e;
 	--primary: #ff4a63;
 	--primary-soft: rgba(236, 55, 80, 0.16);
 	--ring: rgba(255, 74, 99, 0.4);
 
-	--accent-red: #ec3750;
+	--accent-red: #ef5a6f;
 	--accent-orange: #ff8c37;
 	--accent-yellow: #f1c40f;
 	--accent-green: #33d6a6;
 	--accent-cyan: #5bc0de;
-	--accent-blue: #338eda;
-	--accent-purple: #a633d6;
+	--accent-blue: #3e94dc;
+	--accent-purple: #bf6ce2;
 
-	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-	--shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 38px rgba(0, 0, 0, 0.5);
-	--shadow-lg: 0 28px 70px rgba(0, 0, 0, 0.6);
+	--shadow-sm: 0 1px 1px rgba(0, 0, 0, 0.3);
+	--shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 16px rgba(0, 0, 0, 0.35);
+	--shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
 }
 
 @theme inline static {
-	--font-sans: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
-	--font-mono: 'JetBrains Mono', ui-monospace, monospace;
+	/* system faces: nothing to download, so text paints with the first byte of css */
+	--font-sans:
+		system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+		sans-serif;
+	--font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 
 	--color-bg: var(--bg);
 	--color-surface: var(--surface);
@@ -103,8 +101,6 @@ body {
 	font-family: var(--font-sans);
 	color: var(--text);
 	-webkit-font-smoothing: antialiased;
-	text-rendering: optimizeLegibility;
-	letter-spacing: -0.01em;
 }
 a {
 	color: inherit;
@@ -119,12 +115,12 @@ a {
 	--space-6: 32px;
 	--space-7: 48px;
 
-	--radius-sm: 7px;
-	--radius-md: 10px;
-	--radius-lg: 14px;
+	--radius-sm: 4px;
+	--radius-md: 6px;
+	--radius-lg: 8px;
 	--radius-full: 999px;
 
-	--text-xs: 11.5px;
+	--text-xs: 12px;
 	--text-sm: 13px;
 	--text-md: 15px;
 	--text-lg: 17px;
@@ -141,10 +137,10 @@ a {
 	--layer-dialog: 40;
 	--layer-toast: 60;
 
-	--status-pending: #b06a00;
-	--status-approved: #0f8a5f;
-	--status-changes: #c2410c;
-	--status-rejected: #c32b46;
+	--status-pending: #945900;
+	--status-approved: #0d7551;
+	--status-changes: #b63d0b;
+	--status-rejected: #bf2a44;
 	--status-secondpass: #6d4bd0;
 	--status-fraudreview: #b02d84;
 	--status-neutral: var(--text-2);

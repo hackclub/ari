@@ -81,7 +81,7 @@
 	.name {
 		flex: none;
 		font-family: var(--font-mono);
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--text);
 	}
 	.detail {

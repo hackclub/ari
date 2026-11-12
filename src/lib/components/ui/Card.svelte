@@ -43,7 +43,7 @@
 		overflow: clip;
 	}
 	.raised {
-		box-shadow: var(--shadow);
+		box-shadow: var(--shadow-sm);
 	}
 	.flat {
 		border-radius: var(--radius-md);

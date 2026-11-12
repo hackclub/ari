@@ -238,7 +238,7 @@
 	h2 {
 		margin: 0;
 		font-size: var(--text-md);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	code {
 		font-family: var(--font-mono);
@@ -265,7 +265,7 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-2);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.meta {
 		font-size: var(--text-sm);

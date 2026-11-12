@@ -217,7 +217,8 @@
 	.reviewRow.current {
 		border-radius: var(--radius-md);
 		background: var(--surface-2);
-		box-shadow: inset 2px 0 0 var(--primary);
+		outline: 1px solid var(--text-3);
+		outline-offset: -1px;
 	}
 	.head {
 		display: flex;
@@ -251,7 +252,7 @@
 		font-size: var(--text-xs);
 	}
 	.approved {
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.when,
 	.position {
@@ -315,8 +316,8 @@
 	}
 	h3 {
 		margin-bottom: var(--space-1);
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
+		color: var(--text-2);
+		font-size: var(--text-sm);
 	}
 	@container evidenceTile (max-width: 560px) {
 		.head {

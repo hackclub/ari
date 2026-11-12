@@ -110,7 +110,7 @@
 		color: var(--text-2);
 		font-family: var(--font-sans);
 		font-size: var(--text-sm);
-		font-weight: 600;
+		font-weight: 500;
 		white-space: nowrap;
 		text-decoration: none;
 		cursor: pointer;
@@ -131,7 +131,7 @@
 	}
 	.count {
 		padding: 2px var(--space-1);
-		border-radius: var(--radius-full);
+		border-radius: var(--radius-sm);
 		background: var(--surface-3);
 		color: var(--text-2);
 		font-size: var(--text-xs);

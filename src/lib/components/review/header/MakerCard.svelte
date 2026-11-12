@@ -114,7 +114,7 @@
 		min-width: 0;
 		overflow: hidden;
 		color: var(--text);
-		font-weight: 700;
+		font-weight: 600;
 		text-overflow: ellipsis;
 	}
 	.count {

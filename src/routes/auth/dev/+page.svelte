@@ -66,8 +66,7 @@
 	h1 {
 		margin: 0;
 		font-size: var(--text-2xl);
-		font-weight: 800;
-		letter-spacing: -0.03em;
+		font-weight: 600;
 	}
 	.intro {
 		margin: var(--space-2) 0 var(--space-5);

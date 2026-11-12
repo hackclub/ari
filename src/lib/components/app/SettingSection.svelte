@@ -33,7 +33,7 @@
 	h2 {
 		margin: 0;
 		font-size: var(--text-md);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.intro :global(p) {
 		margin: var(--space-2) 0 0;

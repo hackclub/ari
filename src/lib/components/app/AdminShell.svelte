@@ -34,7 +34,6 @@
 <style>
 	.title {
 		font-size: var(--text-md);
-		font-weight: 800;
-		letter-spacing: -0.02em;
+		font-weight: 600;
 	}
 </style>

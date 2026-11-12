@@ -170,10 +170,9 @@
 	}
 	h2 {
 		margin: 0;
-		color: var(--text-3);
-		font-size: var(--text-xs);
-		font-weight: 700;
-		text-transform: uppercase;
+		color: var(--text-2);
+		font-size: var(--text-sm);
+		font-weight: 600;
 	}
 	p {
 		margin: 0;
@@ -189,7 +188,7 @@
 	strong {
 		color: var(--text);
 		font-size: var(--text-2xl);
-		font-weight: 800;
+		font-weight: 600;
 		line-height: 1;
 	}
 	ul {
@@ -268,7 +267,7 @@
 		gap: var(--space-2);
 		color: var(--color-orange);
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.emptyHead strong {
 		color: inherit;

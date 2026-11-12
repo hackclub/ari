@@ -79,7 +79,7 @@
 		background: var(--avatar-color, var(--primary));
 		color: var(--on-primary);
 		font-size: var(--text-xs);
-		font-weight: 800;
+		font-weight: 600;
 		line-height: 1;
 		object-fit: cover;
 		user-select: none;

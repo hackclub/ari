@@ -139,7 +139,7 @@
 	.head strong {
 		flex: 1;
 		color: var(--text);
-		font-weight: 800;
+		font-weight: 600;
 	}
 	.who,
 	.state {
@@ -162,6 +162,6 @@
 		color: var(--text);
 		font-family: var(--font-mono);
 		font-size: var(--text-lg);
-		font-weight: 700;
+		font-weight: 600;
 	}
 </style>

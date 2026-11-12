@@ -212,12 +212,12 @@
 	.head strong {
 		flex: 1;
 		color: var(--text);
-		font-weight: 800;
+		font-weight: 600;
 	}
 	.time {
 		color: var(--text);
 		font-family: var(--font-mono);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.who {
 		color: var(--text-2);

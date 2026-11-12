@@ -6,7 +6,9 @@ import { defineConfig } from 'vite';
 export default defineConfig({
 	plugins: [
 		sentrySvelteKit({
-			errorHandler: (err) => console.warn('[sentry] release/source-map upload failed:', err)
+			errorHandler: (err) => console.warn('[sentry] release/source-map upload failed:', err),
+			// wrapping universal loads would put the whole client sdk back in the first page load
+			autoInstrument: { load: false }
 		}),
 		tailwindcss(),
 		sveltekit()

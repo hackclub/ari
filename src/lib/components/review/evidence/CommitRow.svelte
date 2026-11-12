@@ -117,7 +117,8 @@
 		background: var(--surface-2);
 	}
 	.commitRow.current {
-		box-shadow: inset 2px 0 0 var(--primary);
+		outline: 1px solid var(--text-3);
+		outline-offset: -1px;
 	}
 	.rail {
 		display: flex;

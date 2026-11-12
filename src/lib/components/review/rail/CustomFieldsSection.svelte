@@ -103,10 +103,9 @@
 	}
 	h2 {
 		margin: 0;
-		color: var(--text-3);
-		font-size: var(--text-xs);
-		font-weight: 700;
-		text-transform: uppercase;
+		color: var(--text-2);
+		font-size: var(--text-sm);
+		font-weight: 600;
 	}
 	.field {
 		display: flex;
@@ -132,7 +131,7 @@
 		font-size: var(--text-sm);
 	}
 	.name {
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.required {
 		margin-left: var(--space-1);

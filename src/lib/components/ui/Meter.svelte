@@ -71,14 +71,13 @@
 	}
 	.number {
 		font-size: var(--text-sm);
-		font-weight: 800;
-		letter-spacing: -0.02em;
+		font-weight: 600;
 		white-space: nowrap;
 		font-variant-numeric: tabular-nums;
 	}
 	.label {
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--text-3);
 		white-space: nowrap;
 	}

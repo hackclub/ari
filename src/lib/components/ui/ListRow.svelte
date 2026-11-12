@@ -66,7 +66,7 @@
 	.title {
 		overflow: hidden;
 		font-size: var(--text-md);
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--text);
 		text-decoration: none;
 		text-overflow: ellipsis;

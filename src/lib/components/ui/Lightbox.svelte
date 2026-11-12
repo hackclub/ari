@@ -119,7 +119,7 @@
 	}
 	figcaption {
 		padding: var(--space-1) var(--space-3);
-		border-radius: var(--radius-full);
+		border-radius: var(--radius-sm);
 		background: var(--surface);
 		font-size: var(--text-sm);
 		color: var(--text-2);

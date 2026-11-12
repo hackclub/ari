@@ -66,13 +66,13 @@
 	.name {
 		overflow: hidden;
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 	.number {
 		font-family: var(--font-mono);
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 	}
 </style>

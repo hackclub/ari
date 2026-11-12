@@ -80,7 +80,7 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--text);
 	}
 	.meta {

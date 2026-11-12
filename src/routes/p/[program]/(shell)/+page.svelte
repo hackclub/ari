@@ -58,34 +58,20 @@
 <PageHeader title="Overview" description="How {data.program} reviews are going." />
 
 <div class="stats">
-	<StatTile
-		label="Needs review"
-		value={data.stats.needsReview}
-		subLabel="in queue"
-		tone="info"
-		icon="inbox"
-	/>
+	<StatTile label="Needs review" value={data.stats.needsReview} />
 	<StatTile
 		label="New today"
 		value={data.stats.newToday}
 		subLabel="vs {data.stats.reviewedToday} reviewed"
 		tone={data.stats.net >= 0 ? 'ok' : 'warn'}
-		icon="plus"
 	/>
-	<StatTile
-		label="Reviewed today"
-		value={data.stats.reviewedToday}
-		subLabel="today"
-		tone="ok"
-		icon="checkCircle"
-	/>
+	<StatTile label="Reviewed today" value={data.stats.reviewedToday} />
 	<StatTile
 		label="Median review time"
 		value={medianReview === null ? '–' : formatDurationCompact(medianReview)}
 		subLabel={medianReview === null
 			? 'no decisions in the last 30 days'
 			: `across ${decisionCount} decision${decisionCount === 1 ? '' : 's'} in 30 days`}
-		icon="clock"
 	/>
 </div>
 
@@ -213,7 +199,7 @@
 	h2 {
 		margin: 0;
 		font-size: var(--text-md);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	p {
 		margin: var(--space-1) 0 0;
@@ -231,7 +217,7 @@
 		font-size: var(--text-sm);
 	}
 	.dayTitle {
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.dayReviewer {
 		display: inline-flex;
@@ -319,7 +305,7 @@
 		text-align: center;
 	}
 	.top {
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--text);
 	}
 	.boardMeter {

@@ -239,6 +239,7 @@
 		max-height: min(440px, 70vh);
 		padding: var(--space-1);
 		overflow-y: auto;
+		overscroll-behavior: contain;
 	}
 	.none {
 		margin: 0;

@@ -65,19 +65,25 @@
 			close(false);
 		};
 
+		const onScroll = (event: Event) => {
+			// scrolling inside the panel does not move the anchor
+			if (event.target instanceof Node && panelNode.contains(event.target)) return;
+			place();
+		};
+
 		document.addEventListener('pointerdown', onPress, true);
 		document.addEventListener('keydown', onKey, true);
 		anchorNode.addEventListener('focusout', onFocusOut);
 		panelNode.addEventListener('focusout', onFocusOut);
 		window.addEventListener('resize', place);
-		window.addEventListener('scroll', place, true);
+		window.addEventListener('scroll', onScroll, true);
 		return () => {
 			document.removeEventListener('pointerdown', onPress, true);
 			document.removeEventListener('keydown', onKey, true);
 			anchorNode.removeEventListener('focusout', onFocusOut);
 			panelNode.removeEventListener('focusout', onFocusOut);
 			window.removeEventListener('resize', place);
-			window.removeEventListener('scroll', place, true);
+			window.removeEventListener('scroll', onScroll, true);
 			if (panelNode.isConnected && panelNode.matches(':popover-open')) panelNode.hidePopover();
 		};
 	});
@@ -106,6 +112,7 @@
 		margin: 0;
 		padding: 0;
 		overflow: auto;
+		overscroll-behavior: contain;
 		border: 1px solid var(--border);
 		border-radius: var(--radius-lg);
 		background: var(--surface);

@@ -7,10 +7,10 @@ export function placeFloating(
 	side: FloatingSide,
 	align: FloatingAlign
 ) {
-	panel.style.maxHeight = '';
 	const anchorRect = anchor.getBoundingClientRect();
 	const panelWidth = panel.offsetWidth;
-	const panelHeight = panel.offsetHeight;
+	// content height plus borders: clearing max-height to measure would reset the panel's scroll
+	const panelHeight = panel.scrollHeight + panel.offsetHeight - panel.clientHeight;
 	const viewportWidth = document.documentElement.clientWidth;
 	const roomAbove = anchorRect.top;
 	const roomBelow = window.innerHeight - anchorRect.bottom;

@@ -3,8 +3,7 @@ import { db } from '$lib/server/db';
 import { makerDisplaySelect, reviewedRow } from '$lib/server/serialize';
 import { trackScope, trackWhere, requirePermission } from '$lib/server/authz';
 import { redispatchLastReview, type DispatchOutcome } from '$lib/server/outbound';
-import { tablePageSize } from '$lib/pagination';
-import { listParam, pageParam, trackParam } from '$lib/shipList';
+import { listParam, newestDecidedFirst, pageParam, pageSlice, trackParam } from '$lib/shipList';
 import type { Actions, PageServerLoad } from './$types';
 
 // reverted was decided then unshipped, so it stays in the history. withdrawn was never reviewed
@@ -44,15 +43,24 @@ export const load: PageServerLoad = async ({ parent, locals, url }) => {
 		AND: [track ? { track } : {}, decisions.length ? { status: { in: decisions } } : {}]
 	};
 
-	const [byStatus, byTrack, total] = await Promise.all([
+	const [byStatus, byTrack, matching, decidedDates] = await Promise.all([
 		db.submission.groupBy({ by: ['status'], where: scoped, _count: { _all: true } }),
 		db.submission.groupBy({ by: ['track'], where: scoped, _count: { _all: true } }),
-		db.submission.count({ where })
+		db.submission.findMany({ where, select: { id: true, receivedAt: true } }),
+		// a ship has no decided-at column: its newest review is when it was decided
+		db.review.groupBy({
+			by: ['submissionId'],
+			where: { submission: where },
+			_max: { createdAt: true }
+		})
 	]);
 
+	const total = matching.length;
 	const page = pageParam(url, total);
-	const reviewed = await db.submission.findMany({
-		where,
+	const decidedAt = new Map(decidedDates.map((row) => [row.submissionId, row._max.createdAt]));
+	const pageIds = pageSlice(newestDecidedFirst(matching, decidedAt), page).map((ship) => ship.id);
+	const found = await db.submission.findMany({
+		where: { ...where, id: { in: pageIds } },
 		select: {
 			id: true,
 			title: true,
@@ -78,11 +86,10 @@ export const load: PageServerLoad = async ({ parent, locals, url }) => {
 				orderBy: { createdAt: 'desc' },
 				take: 1
 			}
-		},
-		orderBy: [{ receivedAt: 'desc' }, { id: 'asc' }],
-		skip: page * tablePageSize(),
-		take: tablePageSize()
+		}
 	});
+	const byId = new Map(found.map((ship) => [ship.id, ship]));
+	const reviewed = pageIds.flatMap((id) => byId.get(id) ?? []);
 
 	const tally = (status: DecidedStatus) =>
 		byStatus.find((entry) => entry.status === status)?._count._all ?? 0;

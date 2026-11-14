@@ -1,4 +1,6 @@
+import { cutRows, type CutRow } from '$lib/review/cutRows';
 import {
+	settle,
 	usesCommitFallback,
 	type PersonSeconds,
 	type SourceSeconds,
@@ -127,6 +129,28 @@ export class ReviewSettlement {
 	readonly maxDeflateSeconds = $derived(this.settledSeconds);
 
 	readonly breakdown: SourceSeconds = $derived(this.reported.breakdown);
+
+	// read from the recorded decision, not the draft: an organizer changing a held ship's time
+	// still sees where the first reviewer cut
+	readonly recordedCuts: CutRow[] = $derived.by(() => {
+		const recorded = this.#context.recorded;
+		if (!recorded) return [];
+		const data = this.#context.data;
+		return cutRows(
+			settle(recorded.adjustments, data.settlementEvidence).adjustments,
+			data.settlementEvidence,
+			{
+				devlogIds: data.evidence.devlogs.map((devlog) => devlog.id),
+				clipIds: data.evidence.clips.map((clip) => clip.id),
+				commitHashes: Object.fromEntries(
+					data.evidence.commits.map((commit) => [commit.id, commit.hash])
+				),
+				people: Object.fromEntries(
+					(data.collaborators ?? []).map((person) => [person.makerId, person.name])
+				)
+			}
+		);
+	});
 
 	readonly sourceRows: SourceRow[] = $derived(
 		sources.map((source) => ({

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import {
 	listHref,
 	listParam,
+	newestDecidedFirst,
 	pageHref,
 	pageParam,
 	pageSlice,
@@ -75,5 +76,38 @@ describe('reviewHref', () => {
 	test('carries the track filter', () => {
 		expect(reviewHref('demo', 'ship1', null)).toBe('/p/demo/review/ship1');
 		expect(reviewHref('demo', 'ship1', 'hardware')).toBe('/p/demo/review/ship1?track=hardware');
+	});
+});
+
+describe('newestDecidedFirst', () => {
+	const ship = (id: string, receivedAt: string) => ({ id, receivedAt: new Date(receivedAt) });
+
+	test('orders by the decision, not by when the ship arrived', () => {
+		const ships = [ship('ship1', '2026-01-03'), ship('ship2', '2026-01-01')];
+		const decidedAt = new Map([
+			['ship1', new Date('2026-01-04')],
+			['ship2', new Date('2026-01-09')]
+		]);
+		expect(newestDecidedFirst(ships, decidedAt).map((entry) => entry.id)).toEqual([
+			'ship2',
+			'ship1'
+		]);
+	});
+
+	test('a ship with no review sorts by when it arrived', () => {
+		const ships = [ship('ship1', '2026-01-05'), ship('ship2', '2026-01-01')];
+		const decidedAt = new Map([['ship2', new Date('2026-01-03')]]);
+		expect(newestDecidedFirst(ships, decidedAt).map((entry) => entry.id)).toEqual([
+			'ship1',
+			'ship2'
+		]);
+	});
+
+	test('ties keep a stable order', () => {
+		const ships = [ship('ship2', '2026-01-01'), ship('ship1', '2026-01-01')];
+		expect(newestDecidedFirst(ships, new Map()).map((entry) => entry.id)).toEqual([
+			'ship1',
+			'ship2'
+		]);
 	});
 });

@@ -3,6 +3,7 @@
 	import { programKey, soloHackatimeKey, type TimeSource } from '$lib/review/settlement';
 	import { useReview } from '$lib/review/state/reviewPage.svelte';
 	import { formatDuration } from '$lib/time';
+	import CutRowList from './CutRowList.svelte';
 	import HoursBar from './HoursBar.svelte';
 	import TimeRowEditor from './TimeRowEditor.svelte';
 
@@ -121,6 +122,7 @@
 				</li>
 			{/if}
 		</ul>
+		<CutRowList />
 		{#if reviewerCut && !recordedOnly}
 			<p class="note">
 				<b>{formatDuration(settlement.approvedSeconds)}</b> credited of

@@ -17,6 +17,17 @@ export function pageSlice<Row>(rows: Row[], page: number): Row[] {
 	return rows.slice(page * tablePageSize(), (page + 1) * tablePageSize());
 }
 
+// a decided ship with no review row (screened out, say) sorts by when it arrived
+export function newestDecidedFirst<Ship extends { id: string; receivedAt: Date }>(
+	ships: Ship[],
+	decidedAt: Map<string, Date | null>
+): Ship[] {
+	const sortTime = (ship: Ship) => (decidedAt.get(ship.id) ?? ship.receivedAt).getTime();
+	return [...ships].sort(
+		(first, second) => sortTime(second) - sortTime(first) || first.id.localeCompare(second.id)
+	);
+}
+
 export function listParam(url: URL, key: string, allowed: readonly string[]): string[] {
 	const raw = url.searchParams.get(key);
 	if (!raw) return [];

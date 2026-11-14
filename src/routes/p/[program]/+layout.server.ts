@@ -1,13 +1,16 @@
 import { error, redirect } from '@sveltejs/kit';
 import { privateProvider } from '$private';
 import { db } from '$lib/server/db';
-import { hasOrgPermission, trackScope, trackWhere } from '$lib/server/authz';
+import { hasOrgPermission, selfReviewWhere, trackScope, trackWhere } from '$lib/server/authz';
 import { allPermissions, orgViewProgramPermissions, type ProgramPermission } from '$lib/data';
 import type { LayoutServerLoad } from './$types';
 
-export const load: LayoutServerLoad = async ({ params, locals }) => {
+export const load: LayoutServerLoad = async ({ params, locals, url }) => {
 	const user = locals.user;
 	if (!user) throw redirect(303, '/login');
+	// reading the url reruns this load on every navigation. without it the tab counts are
+	// only as fresh as the last full reload
+	void url.pathname;
 
 	// membership and org permissions come from the session, so the guards need no query
 	const programId = params.program;
@@ -28,11 +31,8 @@ export const load: LayoutServerLoad = async ({ params, locals }) => {
 	const canSecondPass = permissions.includes('SECOND_PASS');
 	const memberProgramIds = user.memberships.map((entry) => entry.programId);
 
-	const [program, secondPassPending, accessible] = await Promise.all([
+	const [program, accessible] = await Promise.all([
 		db.program.findUnique({ where: { id: programId } }),
-		canSecondPass
-			? db.submission.count({ where: { programId, status: 'secondpass' } })
-			: Promise.resolve(0),
 		// the switcher lists the viewer's own programs plus the one being viewed
 		db.program.findMany({
 			where: {
@@ -49,7 +49,7 @@ export const load: LayoutServerLoad = async ({ params, locals }) => {
 
 	// a reviewer's track scope differs per program, so each program contributes its own disjunct
 	const countedIds = [...new Set([programId, ...accessible.map((entry) => entry.id)])];
-	const [pendingCounts, privateTabs] = await Promise.all([
+	const [pendingCounts, secondPassPending, privateTabs] = await Promise.all([
 		db.submission.groupBy({
 			by: ['programId'],
 			where: {
@@ -58,6 +58,16 @@ export const load: LayoutServerLoad = async ({ params, locals }) => {
 			},
 			_count: { _all: true }
 		}),
+		// the same set the second-pass list shows, so the badge and the list agree
+		canSecondPass
+			? db.submission.count({
+					where: {
+						programId,
+						status: 'secondpass',
+						...selfReviewWhere(user, program.reviewersCannotReviewOwnProjects, programId)
+					}
+				})
+			: Promise.resolve(0),
 		privateProvider.programNavTabs(programId, { userId: user.id, permissions })
 	]);
 	const pendingByProgram = new Map(pendingCounts.map((row) => [row.programId, row._count._all]));

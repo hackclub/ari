@@ -8,7 +8,6 @@
         "@prisma/adapter-pg": "^7.8.0",
         "@prisma/client": "^7.8.0",
         "@sentry/sveltekit": "^10.66.0",
-        "chart.js": "^4.5.1",
         "marked": "^18.0.9",
       },
       "devDependencies": {

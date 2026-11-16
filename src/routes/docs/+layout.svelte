@@ -157,7 +157,7 @@
 		padding: 0 var(--space-3) var(--space-3);
 		font-family: var(--font-mono);
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--text-3);
 	}
 	.link {

@@ -88,7 +88,7 @@
 	}
 	.started {
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.summary {
 		font-size: var(--text-xs);
@@ -98,7 +98,7 @@
 		min-width: var(--space-7);
 		font-family: var(--font-mono);
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 		text-align: right;
 		color: var(--text-2);
 	}

@@ -258,7 +258,7 @@
 	.group {
 		padding: var(--space-2) var(--space-3) var(--space-1);
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--text-3);
 	}
 	.hit {
@@ -292,7 +292,7 @@
 	}
 	.primary {
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.secondary {
 		font-size: var(--text-xs);

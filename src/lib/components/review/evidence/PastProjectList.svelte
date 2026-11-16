@@ -190,13 +190,13 @@
 	h3 {
 		margin: 0;
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 		overflow-wrap: anywhere;
 	}
 	.tag {
 		padding: 1px var(--space-2);
 		border: 1px solid var(--border);
-		border-radius: var(--radius-full);
+		border-radius: var(--radius-sm);
 		color: var(--text-2);
 		font-size: var(--text-xs);
 	}
@@ -212,7 +212,7 @@
 	.credited {
 		font-family: var(--font-mono);
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	p {
 		margin: 0;

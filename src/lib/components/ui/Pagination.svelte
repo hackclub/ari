@@ -127,7 +127,7 @@
 		color: var(--text-2);
 		font-family: var(--font-sans);
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 		font-variant-numeric: tabular-nums;
 		text-decoration: none;
 		cursor: pointer;
@@ -156,7 +156,7 @@
 		min-width: var(--space-4);
 		color: var(--text-3);
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.control {

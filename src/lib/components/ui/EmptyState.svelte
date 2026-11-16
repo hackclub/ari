@@ -32,7 +32,7 @@
 	h3 {
 		margin: 0;
 		font-size: var(--text-lg);
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--text);
 	}
 	p {

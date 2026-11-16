@@ -57,7 +57,7 @@
 		display: inline-flex;
 		gap: 2px;
 		padding: 3px;
-		border-radius: var(--radius-full);
+		border-radius: var(--radius-md);
 		background: var(--surface-3);
 	}
 	.segment {
@@ -68,9 +68,9 @@
 		/* control height minus the 3px track padding on each side */
 		height: calc(var(--control-md) - 6px);
 		padding: 0 var(--space-3);
-		border-radius: var(--radius-full);
+		border-radius: var(--radius-sm);
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 		line-height: 1;
 		white-space: nowrap;
 		color: var(--text-2);
@@ -109,7 +109,7 @@
 	}
 	.badgeCount {
 		padding: 2px var(--space-1);
-		border-radius: var(--radius-full);
+		border-radius: var(--radius-sm);
 		background: var(--primary-soft);
 		color: var(--primary);
 		font-size: var(--text-xs);

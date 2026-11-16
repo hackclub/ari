@@ -82,10 +82,10 @@
 		<h3 class="loose">StatTile</h3>
 		<div class="tiles">
 			<StatTile label="In queue" value={128} subLabel="12 older than a week" />
-			<StatTile label="Approved" value="1,204" icon="checkCircle" tone="ok" subLabel="Up 8%" />
-			<StatTile label="Median wait" value={3} unit="d" icon="clock" tone="warn" subLabel="Slower" />
-			<StatTile label="Rejected" value={17} icon="x" tone="danger" subLabel="2 today" />
-			<StatTile label="Reviewers" value={9} icon="user" tone="info" />
+			<StatTile label="Approved" value="1,204" tone="ok" subLabel="Up 8%" />
+			<StatTile label="Median wait" value={3} unit="d" tone="warn" subLabel="Slower" />
+			<StatTile label="Rejected" value={17} tone="danger" subLabel="2 today" />
+			<StatTile label="Reviewers" value={9} tone="info" />
 			<StatTile label="This week" value={32} unit="/ 50">
 				<ProgressBar label="Weekly goal" value={32} max={50} size="sm" />
 			</StatTile>
@@ -108,12 +108,12 @@
 	h2 {
 		margin: 0 0 var(--space-3);
 		font-size: var(--text-lg);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	h3 {
 		margin: 0;
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--text-2);
 	}
 	.loose {

@@ -67,7 +67,7 @@
 		background: var(--surface-3);
 		color: var(--text-2);
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.sm .more {
 		min-width: 22px;

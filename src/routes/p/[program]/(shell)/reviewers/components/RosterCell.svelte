@@ -102,7 +102,7 @@
 		gap: var(--space-2);
 		min-width: 0;
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.truncate {
 		overflow: hidden;
@@ -129,7 +129,7 @@
 		color: var(--text-2);
 	}
 	.online {
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--color-green);
 	}
 	.week {
@@ -139,7 +139,7 @@
 	.number {
 		font-family: var(--font-mono);
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.flash {

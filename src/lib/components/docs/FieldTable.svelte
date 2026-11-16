@@ -55,7 +55,7 @@
 	.required {
 		font-family: var(--font-mono);
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--primary);
 		background: color-mix(in srgb, var(--primary) 13%, transparent);
 		padding: 2px var(--space-2);

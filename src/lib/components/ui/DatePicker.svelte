@@ -326,7 +326,7 @@
 	.month {
 		flex: 1;
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 		text-align: center;
 	}
 	.monthStep {

@@ -21,10 +21,10 @@
 		gap: var(--space-1);
 		padding: 2px var(--space-2) 3px;
 		border: 1px solid color-mix(in srgb, var(--tone) 40%, var(--border));
-		border-radius: var(--radius-full);
+		border-radius: var(--radius-sm);
 		color: var(--tone);
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 		line-height: 1;
 		white-space: nowrap;
 	}

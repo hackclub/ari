@@ -75,7 +75,7 @@
 	}
 	.stacked dt {
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	dd {
 		display: flex;

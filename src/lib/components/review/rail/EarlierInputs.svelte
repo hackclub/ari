@@ -45,9 +45,8 @@
 	h2 {
 		margin: 0;
 		color: var(--text-2);
-		font-size: var(--text-xs);
-		font-weight: 800;
-		text-transform: uppercase;
+		font-size: var(--text-sm);
+		font-weight: 600;
 	}
 	p {
 		margin: 0;

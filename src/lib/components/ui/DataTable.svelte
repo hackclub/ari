@@ -266,7 +266,7 @@
 	}
 	th.cell {
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 		letter-spacing: 0.01em;
 		color: var(--text-3);
 		white-space: nowrap;

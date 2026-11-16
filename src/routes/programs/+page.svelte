@@ -135,7 +135,7 @@
 	.name {
 		flex: 1;
 		overflow: hidden;
-		font-weight: 700;
+		font-weight: 600;
 		text-decoration: none;
 		text-overflow: ellipsis;
 		white-space: nowrap;

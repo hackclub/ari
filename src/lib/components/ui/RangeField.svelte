@@ -53,7 +53,7 @@
 		gap: var(--space-2);
 		min-width: 0;
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--text-2);
 	}
 	.head {

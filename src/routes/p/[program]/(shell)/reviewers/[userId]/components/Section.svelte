@@ -39,7 +39,7 @@
 	h2 {
 		margin: 0;
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--text);
 	}
 	.detail {

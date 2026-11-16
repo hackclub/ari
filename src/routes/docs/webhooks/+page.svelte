@@ -96,8 +96,7 @@
 	h1 {
 		margin: var(--space-4) 0 0;
 		font-size: calc(var(--text-2xl) * 1.4);
-		font-weight: 800;
-		letter-spacing: -0.033em;
+		font-weight: 600;
 		line-height: 1.02;
 		color: var(--text);
 	}

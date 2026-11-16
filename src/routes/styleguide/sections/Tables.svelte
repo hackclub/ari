@@ -202,12 +202,12 @@
 	h2 {
 		margin: 0 0 var(--space-3);
 		font-size: var(--text-lg);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	h3 {
 		margin: 0;
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--text-2);
 	}
 	.stack {
@@ -235,7 +235,7 @@
 	.title,
 	.maker {
 		overflow: hidden;
-		font-weight: 700;
+		font-weight: 600;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}

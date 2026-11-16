@@ -214,8 +214,7 @@
 	h1 {
 		margin: 0;
 		font-size: var(--text-2xl);
-		font-weight: 800;
-		letter-spacing: -0.03em;
+		font-weight: 600;
 	}
 	header p {
 		margin: var(--space-1) 0 0;
@@ -228,7 +227,7 @@
 	h2 {
 		margin: 0 0 var(--space-3);
 		font-size: var(--text-lg);
-		font-weight: 700;
+		font-weight: 600;
 	}
 	.stack {
 		display: flex;

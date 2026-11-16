@@ -70,8 +70,7 @@
 	h1 {
 		margin: 0 0 var(--space-2);
 		font-size: var(--text-2xl);
-		font-weight: 800;
-		letter-spacing: -0.03em;
+		font-weight: 600;
 	}
 	.error {
 		margin: 0;

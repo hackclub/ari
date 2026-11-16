@@ -92,7 +92,7 @@
 		min-width: var(--space-4);
 		height: var(--space-4);
 		padding: 0 var(--space-1);
-		border-radius: var(--radius-full);
+		border-radius: var(--radius-sm);
 		background: var(--primary);
 		color: var(--on-primary);
 		font-size: var(--text-xs);

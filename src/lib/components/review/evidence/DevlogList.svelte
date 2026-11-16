@@ -226,7 +226,8 @@
 	}
 	.devlogRow.current {
 		border-radius: var(--radius-md);
-		box-shadow: inset 2px 0 0 var(--primary);
+		outline: 1px solid var(--text-3);
+		outline-offset: -1px;
 	}
 	.open {
 		flex: 1 1 auto;
@@ -278,7 +279,7 @@
 		align-items: center;
 		gap: var(--space-1);
 		padding: 2px var(--space-2);
-		border-radius: var(--radius-full);
+		border-radius: var(--radius-sm);
 		background: var(--surface-3);
 		color: var(--text-2);
 	}

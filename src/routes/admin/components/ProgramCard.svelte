@@ -148,7 +148,7 @@
 	.name {
 		overflow: hidden;
 		font-size: var(--text-md);
-		font-weight: 700;
+		font-weight: 600;
 		text-decoration: none;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -183,8 +183,7 @@
 	dd {
 		margin: 0;
 		font-size: var(--text-xl);
-		font-weight: 800;
-		letter-spacing: -0.03em;
+		font-weight: 600;
 		font-variant-numeric: tabular-nums;
 	}
 	dt {

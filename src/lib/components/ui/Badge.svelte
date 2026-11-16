@@ -35,13 +35,13 @@
 		align-items: center;
 		gap: var(--space-1);
 		padding: 3px var(--space-2) 4px;
-		border-radius: var(--radius-full);
+		border-radius: var(--radius-sm);
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 500;
 		line-height: 1;
 		white-space: nowrap;
 		color: var(--tone);
-		background: color-mix(in srgb, var(--tone) 18%, var(--surface));
+		background: color-mix(in srgb, var(--tone) 12%, var(--surface));
 	}
 	.dot {
 		width: 7px;

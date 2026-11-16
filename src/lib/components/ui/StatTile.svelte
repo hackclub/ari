@@ -1,7 +1,5 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import Icon from './Icon.svelte';
-	import type { IconName } from './iconPaths';
 
 	interface Props {
 		label: string;
@@ -9,17 +7,13 @@
 		unit?: string;
 		subLabel?: string;
 		tone?: 'neutral' | 'ok' | 'warn' | 'danger' | 'info';
-		icon?: IconName;
 		children?: Snippet;
 	}
-	let { label, value, unit, subLabel, tone = 'neutral', icon, children }: Props = $props();
+	let { label, value, unit, subLabel, tone = 'neutral', children }: Props = $props();
 </script>
 
 <div class={['statTile', tone]}>
-	<div class="head">
-		<span class="label">{label}</span>
-		{#if icon}<span class="icon"><Icon name={icon} size={15} /></span>{/if}
-	</div>
+	<div class="label">{label}</div>
 	<div class="value">
 		{value}{#if unit}<span class="unit">{unit}</span>{/if}
 	</div>
@@ -35,7 +29,6 @@
 		border: 1px solid var(--border);
 		border-radius: var(--radius-lg);
 		background: var(--surface);
-		box-shadow: var(--shadow-sm);
 	}
 	.ok {
 		--tone: var(--color-green);
@@ -49,34 +42,14 @@
 	.info {
 		--tone: var(--color-blue);
 	}
-	.head {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
-	}
 	.label {
-		font-size: var(--text-xs);
-		font-weight: 600;
-		letter-spacing: 0.03em;
-		text-transform: uppercase;
+		font-size: var(--text-sm);
 		color: var(--text-2);
-	}
-	.icon {
-		display: grid;
-		place-content: center;
-		flex: none;
-		width: var(--space-5);
-		height: var(--space-5);
-		border-radius: var(--radius-sm);
-		background: color-mix(in srgb, var(--tone) 16%, var(--surface));
-		color: var(--tone);
 	}
 	.value {
 		margin-top: var(--space-1);
 		font-size: var(--text-2xl);
-		font-weight: 800;
-		letter-spacing: -0.04em;
+		font-weight: 600;
 		line-height: 1.1;
 		font-variant-numeric: tabular-nums;
 		color: var(--text);
@@ -84,14 +57,13 @@
 	.unit {
 		margin-left: 3px;
 		font-size: var(--text-md);
-		font-weight: 700;
-		letter-spacing: 0;
+		font-weight: 500;
 		color: var(--text-2);
 	}
 	.subLabel {
 		margin-top: var(--space-1);
 		font-size: var(--text-xs);
-		font-weight: 600;
+		font-weight: 500;
 		color: var(--tone);
 	}
 	.extra {

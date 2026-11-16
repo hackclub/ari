@@ -63,7 +63,7 @@
 	.heading {
 		padding: var(--space-2) var(--space-3) var(--space-1);
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 		color: var(--text-3);
 	}
 	@media (max-width: 600px) {

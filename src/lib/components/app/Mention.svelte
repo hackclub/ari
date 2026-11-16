@@ -22,10 +22,10 @@
 		max-width: 100%;
 		padding: 2px var(--space-2) 2px 2px;
 		border: 1px solid var(--border);
-		border-radius: var(--radius-full);
+		border-radius: var(--radius-sm);
 		background: var(--surface-3);
 		color: var(--text);
-		font-weight: 700;
+		font-weight: 600;
 		line-height: 1;
 		vertical-align: middle;
 	}

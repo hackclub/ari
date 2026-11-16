@@ -50,10 +50,8 @@
 	}
 	h2 {
 		margin: 0;
-		font-size: var(--text-xs);
-		font-weight: 700;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
+		font-size: var(--text-sm);
+		font-weight: 600;
 		color: var(--text-2);
 	}
 </style>

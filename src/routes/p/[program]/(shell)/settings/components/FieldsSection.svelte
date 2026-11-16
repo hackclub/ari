@@ -136,7 +136,7 @@
 	}
 	.label {
 		font-size: var(--text-sm);
-		font-weight: 700;
+		font-weight: 600;
 		overflow-wrap: anywhere;
 	}
 	.description {

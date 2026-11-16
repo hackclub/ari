@@ -46,7 +46,7 @@
 		color: var(--text);
 		box-shadow: var(--shadow-lg);
 		font-size: var(--text-xs);
-		font-weight: 700;
+		font-weight: 600;
 		white-space: nowrap;
 		pointer-events: none;
 		transform: scale(1.03);

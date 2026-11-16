@@ -101,6 +101,7 @@ export class ReviewContext {
 	readonly railLocked = $derived((this.closed && !this.canEditHeld) || this.readOnly);
 	readonly timeLocked = $derived(this.railLocked || !this.data.rules.allowDeflation);
 	readonly wantsJustification = $derived(this.data.rules.hoursJustification);
+	readonly automaticCut = $derived(this.data.automaticCutNotes.length > 0);
 	readonly heldDecision = $derived<Decision | null>(
 		this.secondPass ? (this.data.recorded?.decision ?? 'approved') : null
 	);

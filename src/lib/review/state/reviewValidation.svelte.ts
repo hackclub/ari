@@ -60,6 +60,7 @@ export class ReviewValidation {
 				? { adjustments: heldTime.adjustments }
 				: this.#settlement.preview.settlement,
 			deflateSeconds: heldTime ? heldTime.deflateSeconds : this.#settlement.preview.deflateSeconds,
+			automaticCut: context.automaticCut,
 			canAct: !context.readOnly,
 			canSecondPass: context.viewer.canSecondPass,
 			isPoc: context.viewer.isPoc,

@@ -25,7 +25,8 @@ import {
 	refuse,
 	refuseProblems,
 	selfReviewRefusal,
-	shipVmIds
+	shipVmIds,
+	viewerOf
 } from '$lib/server/review/guards';
 import {
 	decisionKind,
@@ -117,9 +118,10 @@ export async function decideShip(
 
 	// settled from the evidence and the posted reductions: a client total is never read
 	const shipKey = { submissionId: ship.id, programId: ship.programId };
-	const [excluded, deductions] = await Promise.all([
+	const [excluded, deductions, automaticCutNotes] = await Promise.all([
 		privateProvider.excludedMakers(shipKey),
-		privateProvider.shipDeductions(shipKey)
+		privateProvider.shipDeductions(shipKey),
+		privateProvider.automaticCutNotes(shipKey, viewerOf(user, ship.programId))
 	]);
 	const evidence = {
 		...withoutPeople(
@@ -149,6 +151,7 @@ export async function decideShip(
 		notes: { note, audit, ...justification },
 		settlement: preview.settlement,
 		deflateSeconds: preview.deflateSeconds,
+		automaticCut: automaticCutNotes.length > 0,
 		viewer: { canAct: await canActOnSubmission(ship.id, user.id) }
 	});
 	if (problems.length) return refuseProblems(problems);

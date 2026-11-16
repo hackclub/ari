@@ -294,6 +294,8 @@ export interface ReviewPageData {
 	settlementEvidence: Evidence;
 	// who decided the fixed cuts in settlementEvidence
 	deductionLabel: string | null;
+	// one sentence per cut made outside the review, for the deflation reason
+	automaticCutNotes: string[];
 	rules: { hoursJustification: boolean; allowDeflation: boolean };
 	update: { message: string } | null;
 	warnings: ReviewWarning[];

@@ -50,6 +50,7 @@ export interface RuleSources {
 	// previewSettlement's answer for the draft, or the held values while a held ship's time is untouched
 	settlement: { adjustments: Adjustments };
 	deflateSeconds: number | null;
+	automaticCut: boolean;
 	canAct: boolean;
 	canSecondPass: boolean;
 	isPoc: boolean;
@@ -73,6 +74,7 @@ export function problemsForAction(action: ReviewAction, sources: RuleSources): R
 			},
 			settlement: sources.settlement,
 			deflateSeconds: sources.deflateSeconds,
+			automaticCut: sources.automaticCut,
 			viewer: {
 				canSecondPass: sources.canSecondPass,
 				madeHeldDecision: sources.held?.madeByViewer ?? false,
@@ -95,6 +97,7 @@ export function problemsForAction(action: ReviewAction, sources: RuleSources): R
 		},
 		settlement: sources.settlement,
 		deflateSeconds: sources.deflateSeconds,
+		automaticCut: sources.automaticCut,
 		viewer: { canAct: sources.canAct }
 	});
 }
@@ -122,6 +125,7 @@ export function confirmNoteGaps(action: ReviewAction, sources: RuleSources): Rev
 		},
 		settlement: sources.settlement,
 		deflateSeconds: sources.deflateSeconds,
+		automaticCut: sources.automaticCut,
 		viewer: { canAct: true }
 	}).filter((problem) => noteFields.includes(problem.field) && !enforced.includes(problem.field));
 }

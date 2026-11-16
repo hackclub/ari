@@ -54,7 +54,8 @@
 			>hackatime_projects</code
 		>, <code>hackatime_user_id</code>, <code>lapse_links</code>) and the reviewer's own words (<code
 			>technical_features</code
-		>, <code>deflation_reason</code>).
+		>, <code>deflation_reason</code>). Ari starts <code>deflation_reason</code> with a sentence for each
+		cut made outside the review, which the reviewer can reword.
 	</p>
 </DocSection>
 

@@ -17,7 +17,8 @@ import {
 	refuse,
 	refuseProblems,
 	selfReviewRefusal,
-	shipVmIds
+	shipVmIds,
+	viewerOf
 } from '$lib/server/review/guards';
 import { isSecondsReview, storedTimeRequest } from '$lib/server/review/heldReview';
 import { readConfirmEdits } from '$lib/server/review/secondPassEdits';
@@ -93,9 +94,10 @@ export async function confirmSecondPass(
 	);
 
 	const allowDeflation = ship.program.allowDeflation;
-	const [excluded, deductions] = await Promise.all([
+	const [excluded, deductions, automaticCutNotes] = await Promise.all([
 		privateProvider.excludedMakers(shipRef),
-		privateProvider.shipDeductions(shipRef)
+		privateProvider.shipDeductions(shipRef),
+		privateProvider.automaticCutNotes(shipRef, viewerOf(user, programId))
 	]);
 	const evidence = {
 		...withoutPeople(
@@ -133,6 +135,7 @@ export async function confirmSecondPass(
 		},
 		settlement: legacy ? { adjustments: legacy.settled.adjustments } : preview.settlement,
 		deflateSeconds: legacy ? review.deflateMinutes : preview.deflateSeconds,
+		automaticCut: automaticCutNotes.length > 0,
 		viewer: { canSecondPass: true, madeHeldDecision, isPoc: viewerIsPoc }
 	});
 	if (problems.length) return refuseProblems(problems);

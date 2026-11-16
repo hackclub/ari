@@ -33,6 +33,7 @@ const approval = (overrides: Partial<DecisionRuleInput> = {}): DecisionRuleInput
 	},
 	settlement: { adjustments: {} },
 	deflateSeconds: null,
+	automaticCut: false,
 	viewer: { canAct: true },
 	...overrides
 });
@@ -133,6 +134,26 @@ describe('decisionProblems', () => {
 		).toEqual([]);
 	});
 
+	test('a cut made outside the review needs a reason too, though the reviewer deflated nothing', () => {
+		const cut = approval({ automaticCut: true });
+		expect(decisionProblems(cut)).toEqual([
+			{
+				code: 'deflationReasonRequired',
+				field: 'deflationReason',
+				message: 'Explain why the hours were deflated.'
+			}
+		]);
+		expect(codes({ ...cut, decision: 'rejected' })).toEqual(['deflationReasonRequired']);
+		expect(codes({ ...cut, program: { hoursJustification: false } })).toEqual([]);
+		expect(
+			codes({ ...cut, notes: { ...cut.notes, deflationReason: '20m was taken off.' } })
+		).toEqual([]);
+		// the reviewer's own deflate can still be cleared, so the message keeps offering that
+		expect(decisionProblems({ ...cut, deflateSeconds: 60 })[0].message).toBe(
+			'Explain why the hours were deflated, or clear the deflation.'
+		);
+	});
+
 	test('a closed ship or a claim held elsewhere comes first', () => {
 		expect(codes(approval({ viewer: { canAct: false }, status: 'approved' }))).toEqual([
 			'claimHeldByOther',
@@ -222,6 +243,7 @@ const confirm = (overrides: Partial<ConfirmRuleInput> = {}): ConfirmRuleInput =>
 	notes: { note: 'Nice.', technicalFeatures: 'Parser.', deflationReason: '' },
 	settlement: { adjustments: {} },
 	deflateSeconds: null,
+	automaticCut: false,
 	viewer: { canSecondPass: true, madeHeldDecision: false, isPoc: false },
 	...overrides
 });
@@ -281,6 +303,21 @@ describe('confirmProblems', () => {
 		expect(confirmCodes(confirm({ deflateSeconds: 60 }))).toEqual(['deflationReasonRequired']);
 		expect(
 			confirmCodes(confirm({ deflateSeconds: 60, program: { hoursJustification: false } }))
+		).toEqual([]);
+	});
+
+	test('a cut that landed while the decision was held needs its reason at the confirm', () => {
+		expect(confirmCodes(confirm({ automaticCut: true }))).toEqual(['deflationReasonRequired']);
+		expect(
+			confirmCodes(
+				confirm({
+					automaticCut: true,
+					notes: { ...confirm().notes, deflationReason: '1h was taken off.' }
+				})
+			)
+		).toEqual([]);
+		expect(
+			confirmCodes(confirm({ automaticCut: true, program: { hoursJustification: false } }))
 		).toEqual([]);
 	});
 });

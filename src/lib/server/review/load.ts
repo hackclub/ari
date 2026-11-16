@@ -128,7 +128,8 @@ export async function loadReviewPage(input: ReviewLoadInput): Promise<ReviewPage
 		privatePanels,
 		issue,
 		excluded,
-		deductions
+		deductions,
+		automaticCutNotes
 	] = await Promise.all([
 		db.program.findUniqueOrThrow({
 			where: { id: programId },
@@ -170,7 +171,8 @@ export async function loadReviewPage(input: ReviewLoadInput): Promise<ReviewPage
 		privateProvider.reviewPanelData(shipRef, viewer),
 		ship.evidenceSyncedAt ? null : captureIssue(ship.id),
 		privateProvider.excludedMakers(shipRef),
-		privateProvider.shipDeductions(shipRef, viewer)
+		privateProvider.shipDeductions(shipRef, viewer),
+		privateProvider.automaticCutNotes(shipRef, viewer)
 	]);
 
 	const evidence = evidenceFromRows(ship);
@@ -242,6 +244,7 @@ export async function loadReviewPage(input: ReviewLoadInput): Promise<ReviewPage
 			deductionsSeconds: deductions?.seconds
 		},
 		deductionLabel: deductions?.label ?? null,
+		automaticCutNotes,
 		rules: { hoursJustification: meta.hoursJustification, allowDeflation: meta.allowDeflation },
 		update: ship.isUpdate ? { message: ship.updateMessage ?? '' } : null,
 		warnings: warningRows(warnings),

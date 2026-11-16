@@ -173,6 +173,9 @@ export interface PrivateProvider {
 	// fixed cuts decided outside the review, applied after the reviewer's own. the label may depend
 	// on the viewer; the seconds never do
 	shipDeductions(ship: ShipRef, viewer?: Viewer): Promise<ShipDeductions | null>;
+	// one sentence per cut nobody on the review typed, worded for the deflation reason. a cut this
+	// viewer may not be told about is left out
+	automaticCutNotes(ship: ShipRef, viewer: Viewer): Promise<string[]>;
 	routeHeldDecision(
 		ship: ShipRef,
 		decision: 'approved' | 'changes' | 'rejected'

@@ -23,6 +23,7 @@ const sources = (overrides: Partial<RuleSources> = {}): RuleSources => ({
 	draft: { ...emptyDraft(), note: 'Nice', audit, checks: [true, true] },
 	settlement: { adjustments: {} },
 	deflateSeconds: null,
+	automaticCut: false,
 	canAct: true,
 	canSecondPass: false,
 	isPoc: false,
@@ -63,6 +64,25 @@ describe('problems per action', () => {
 	test('a deflated decision needs its reason whatever the decision', () => {
 		const input = sources({ hoursJustification: true, deflateSeconds: 600 });
 		expect(codes('changes', input)).toEqual(['deflationReasonRequired']);
+	});
+
+	test('a cut made outside the review asks every action for the reason', () => {
+		const open = sources({ hoursJustification: true, automaticCut: true });
+		expect(codes('approve', open)).toEqual([
+			'technicalFeaturesRequired',
+			'deflationReasonRequired'
+		]);
+		expect(codes('reject', open)).toEqual(['deflationReasonRequired']);
+		const held = sources({
+			hoursJustification: true,
+			automaticCut: true,
+			status: 'secondpass',
+			canSecondPass: true,
+			held: { decision: 'rejected', madeByViewer: false }
+		});
+		expect(codes('confirm', held)).toEqual(['deflationReasonRequired']);
+		const explained = { ...held.draft, deflationReason: '1h was taken off.' };
+		expect(codes('confirm', { ...held, draft: explained })).toEqual([]);
 	});
 
 	test('a read-only viewer is told first', () => {

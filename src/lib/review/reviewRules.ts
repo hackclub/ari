@@ -58,6 +58,8 @@ export interface DecisionRuleInput {
 	// the settled adjustments and effective deflate, as previewSettlement returns them
 	settlement: { adjustments: Adjustments };
 	deflateSeconds: number | null;
+	// time came off outside the review: nobody typed it, and it still has to be explained
+	automaticCut: boolean;
 	viewer: { canAct: boolean };
 }
 
@@ -132,11 +134,28 @@ const featuresProblem = (): ReviewProblem => ({
 	message: 'Describe the specific technical features that account for these hours.'
 });
 
-const deflationProblem = (): ReviewProblem => ({
+// a cut made outside the review cannot be cleared, so the message does not offer it
+const deflationProblem = (reviewerDeflated: boolean): ReviewProblem => ({
 	code: 'deflationReasonRequired',
 	field: 'deflationReason',
-	message: 'Explain why the hours were deflated, or clear the deflation.'
+	message: reviewerDeflated
+		? 'Explain why the hours were deflated, or clear the deflation.'
+		: 'Explain why the hours were deflated.'
 });
+
+interface DeflationRuleInput {
+	program: { hoursJustification: boolean };
+	notes: Pick<DecisionNotes, 'deflationReason'>;
+	settlement: { adjustments: Adjustments };
+	deflateSeconds: number | null;
+	automaticCut: boolean;
+}
+
+function deflationProblems(input: DeflationRuleInput): ReviewProblem[] {
+	if (!input.program.hoursJustification || input.notes.deflationReason.trim()) return [];
+	const reviewerDeflated = isDeflated(input.settlement.adjustments, input.deflateSeconds);
+	return reviewerDeflated || input.automaticCut ? [deflationProblem(reviewerDeflated)] : [];
+}
 
 // in the order the server reports them: the first problem is the one a refusal names
 export function decisionProblems(input: DecisionRuleInput): ReviewProblem[] {
@@ -184,12 +203,7 @@ export function decisionProblems(input: DecisionRuleInput): ReviewProblem[] {
 			});
 	}
 
-	if (
-		justified &&
-		isDeflated(input.settlement.adjustments, input.deflateSeconds) &&
-		!input.notes.deflationReason.trim()
-	)
-		problems.push(deflationProblem());
+	problems.push(...deflationProblems(input));
 
 	return problems;
 }
@@ -206,6 +220,7 @@ export interface ConfirmRuleInput {
 	notes: Pick<DecisionNotes, 'note' | 'technicalFeatures' | 'deflationReason'>;
 	settlement: { adjustments: Adjustments };
 	deflateSeconds: number | null;
+	automaticCut: boolean;
 	viewer: { canSecondPass: boolean; madeHeldDecision: boolean; isPoc: boolean };
 }
 
@@ -244,12 +259,7 @@ export function confirmProblems(input: ConfirmRuleInput): ReviewProblem[] {
 		});
 	if (justified && input.decision === 'approved' && !input.notes.technicalFeatures.trim())
 		problems.push(featuresProblem());
-	if (
-		justified &&
-		isDeflated(input.settlement.adjustments, input.deflateSeconds) &&
-		!input.notes.deflationReason.trim()
-	)
-		problems.push(deflationProblem());
+	problems.push(...deflationProblems(input));
 	return problems;
 }
 

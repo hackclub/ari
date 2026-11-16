@@ -1,4 +1,5 @@
 import { getContext, setContext, tick } from 'svelte';
+import { offerCutNotes } from './cutNotes.svelte';
 import { EvidenceCursor } from './evidenceCursor.svelte';
 import { RailSize } from './railSize.svelte';
 import { ReviewClaim, type ClaimTiming } from './reviewClaim.svelte';
@@ -36,6 +37,7 @@ export class ReviewPage {
 		this.context = new ReviewContext(read);
 		this.claim = new ReviewClaim(this.context, timing.claim);
 		this.draft = new ReviewDraft(this.context, timing.draft);
+		offerCutNotes(this.context, this.draft);
 		this.settlement = new ReviewSettlement(this.context, this.draft);
 		this.validation = new ReviewValidation(this.context, this.draft, this.settlement);
 		this.wizard = new Wizard(this.context, this.draft);

@@ -11,12 +11,14 @@
 			!context.data.collaborators &&
 			(draft.timeEditable || draft.value.deflateSeconds !== null)
 	);
+	// a cut made outside the review is explained even where the reviewer may not deflate
+	const reasonRequired = $derived(settlement.deflated || (context.automaticCut && draft.editable));
+	// a refusal always has its field: the cut may have landed after this page loaded
 	const reasonShown = $derived(
 		context.wantsJustification &&
-			context.data.rules.allowDeflation &&
-			(settlement.deflated ||
-				Boolean(draft.value.deflationReason.trim()) ||
-				validation.problemFor('deflationReason') !== null)
+			(validation.problemFor('deflationReason') !== null ||
+				((context.data.rules.allowDeflation || context.automaticCut) &&
+					(reasonRequired || Boolean(draft.value.deflationReason.trim()))))
 	);
 </script>
 
@@ -44,7 +46,7 @@
 			hint="Internal. Needed whenever less than the captured time is credited."
 			autoGrow
 			rows={2}
-			required={settlement.deflated}
+			required={reasonRequired}
 			readonly={!draft.editable}
 			error={validation.errorFor('deflationReason')}
 			bind:value={draft.value.deflationReason}
